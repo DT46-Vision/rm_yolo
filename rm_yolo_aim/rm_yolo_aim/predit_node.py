@@ -15,7 +15,7 @@ import numpy as np                      # Python数值计算库
 
 from rm_yolo_aim.predit import YOLOObjectDetector
 
-detector = YOLOObjectDetector('/home/dbink/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best.pt')
+detector = YOLOObjectDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best.pt')
 
 """
 创建一个订阅者节点

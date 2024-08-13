@@ -5,9 +5,10 @@ import serial
 
 class YOLOObjectDetector:
     def __init__(self, model_path, serial_port='/dev/ttyUSB0', baud_rate=115200):
-        self.model = YOLO(model_path)
-        self.com = serial.Serial(serial_port, baud_rate)
         self.logger = logger
+        self.model = YOLO(model_path) # 加载模型
+        # self.logger.info(f'加载模型 {self.model}')
+        self.com = serial.Serial(serial_port, baud_rate)
         self.target_class = 'B1'
 
         # 打印所有类别名称和它们的索引
