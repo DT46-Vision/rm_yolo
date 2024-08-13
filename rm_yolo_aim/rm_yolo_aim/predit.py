@@ -19,7 +19,7 @@ class YOLOObjectDetector:
 
     def predict(self, img):
         results = self.model(img)
-        self.logger.info(f'用时 {results[0].speed}')
+        # self.logger.info(f'用时 {results[0].speed}')
         annotated_img = results[0].plot()
         img_height, img_width = img.shape[:2]
         # self.logger.info(f'图像尺寸 {img_height} x {img_width}')
