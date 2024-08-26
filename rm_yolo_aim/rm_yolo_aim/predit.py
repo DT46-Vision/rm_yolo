@@ -9,7 +9,7 @@ class YOLOObjectDetector:
         self.model = YOLO(model_path) # 加载模型
         # self.logger.info(f'加载模型 {self.model}')
         self.com = serial.Serial(serial_port, baud_rate)
-        self.target_class = 'B1'
+        self.target_class = 'R4'
 
         # 打印所有类别名称和它们的索引
         for idx, name in self.model.names.items():
@@ -99,5 +99,5 @@ class YOLOObjectDetector:
             cap.release()
 
 if __name__ == '__main__':
-    detector = YOLOObjectDetector('/home/dbink/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best.pt')
+    detector = YOLOObjectDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best.pt')
     detector.start_detection()
