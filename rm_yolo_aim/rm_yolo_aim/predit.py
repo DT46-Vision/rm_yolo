@@ -19,52 +19,80 @@ class YOLOObjectDetector:
         return next((idx for idx, name in self.model.names.items() if name == class_name), None)
 
     def predict(self, img):
+        """
+        对输入图像进行预测，寻找并标记目标。
+
+        参数:
+        img: 输入的图像，应为numpy数组格式。
+
+        返回:
+        annotated_img: 标记后的图像。
+        max_center: 最大面积目标的中心坐标，如果未检测到目标则返回None。
+        """
         results = self.model(img)
         # self.logger.info(f'用时 {results[0].speed}')
         annotated_img = results[0].plot()
         img_height, img_width = img.shape[:2]
         # self.logger.info(f'图像尺寸 {img_height} x {img_width}')
 
+        # 获取目标类别的索引
         target_idx = self.get_class_index(self.target_class)
 
+        # 如果未找到目标类别，记录警告并返回
         if target_idx is None:
             self.logger.warning(f'未找到类别 "{self.target_class}"')
             return annotated_img, None
 
+        # 获取所有检测到的框
         boxes = results[0].boxes
+        
+        # 初始化最大面积和对应的中心点
         max_area = 0
         max_center = None
 
+        # 遍历所有框，寻找最大面积的目标
         for box in boxes:
+            # 如果框的类别是目标类别
             if box.cls == target_idx:
+                # 计算框的坐标和面积
                 x1, y1, x2, y2 = box.xyxy[0]
                 area = (x2 - x1) * (y2 - y1)
-
+                
+                # 如果当前面积大于最大面积，更新最大面积和中心点
                 if area > max_area:
                     max_area = area
                     max_center = ((x1 + x2) / 2, (y1 + y2) / 2)
 
+        # 如果找到了目标，将其中心点转换为像素坐标，并计算相对于图像中心的偏移量
         if max_center is not None:
             pixel_x = int(max_center[0].item())
             pixel_y = int(max_center[1].item())
 
+            # 记录目标中心的像素坐标
             # self.logger.info(f"pixel_x: {pixel_x}, pixel_y: {pixel_y}")
 
             servo_x = pixel_x - int(img_width  / 2)
             servo_y = pixel_y - int(img_height / 2)
 
+            # 创建要发送的串口消息
             uart_msg = f'[{servo_x},{servo_y}]'
 
+            # 将消息发送到串口
             self.com.write(uart_msg.encode('ascii'))
+            # 记录发送的串口消息
             self.logger.info(f'发送到串口的数据: {uart_msg}')
 
+            # 在图像上标记目标中心和准星
             cv2.circle(annotated_img, (int(pixel_x), int(pixel_y)), 5, (0, 0, 255), -1)  # 目标中心点
             cv2.circle(annotated_img, (int(img_width / 2), int(img_height / 2)), 2, (0, 255, 0), -1)# 准星
-            
+                
+            # 记录最大面积目标的中心坐标
             # self.logger.info(f'最大面积目标的中心坐标: {max_center}')
         else:
+            # 如果未检测到目标，记录信息
             self.logger.info('未检测到目标')
 
+        # 返回标记后的图像和最大目标的中心坐标
         return annotated_img, max_center
 
     @staticmethod
