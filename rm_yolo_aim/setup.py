@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'predit_node = rm_yolo_aim.predit_node:main',
+            'armor_detector_node = rm_yolo_aim.armor_detector_node:main',
         ],
     },
 )

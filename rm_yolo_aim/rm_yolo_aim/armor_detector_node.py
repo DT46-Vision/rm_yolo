@@ -14,7 +14,7 @@ from cv_bridge import CvBridge          # ROS与OpenCV图像转换类
 import cv2                              # Opencv图像处理库
 import numpy as np                      # Python数值计算库
 
-from rm_yolo_aim.predit import ArmorDetector
+from rm_yolo_aim.armor_detector import ArmorDetector
 
 detector = ArmorDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best.pt')
 
@@ -43,7 +43,7 @@ class ImageSubscriber(Node):
 
 def main(args=None):                            # ROS2节点主入口main函数
     rclpy.init(args=args)                       # ROS2 Python接口初始化
-    node = ImageSubscriber("predit_node")       # 创建ROS2节点对象
+    node = ImageSubscriber("armor_detector_node")       # 创建ROS2节点对象
     rclpy.spin(node)                            # 循环等待ROS2退出
     node.destroy_node()                         # 销毁节点对象
     rclpy.shutdown()                            # 关闭ROS2 Python接口
