@@ -1,14 +1,24 @@
 from ultralytics import YOLO
 import cv2
+import os
 from loguru import logger
 import serial
 
+
 class ArmorDetector:
-    def __init__(self, model_path, serial_port='/dev/ttyUSB0', baud_rate=115200):
+    def __init__(self, model_path, serial_port="/dev/ttyUSB0", baud_rate=115200):
         self.logger = logger
-        self.model = YOLO(model_path) # 加载模型
+        self.model = YOLO(model_path)  # 加载模型
         # self.logger.info(f'加载模型 {self.model}')
-        #self.com = serial.Serial(serial_port, baud_rate)
+        # self.com = serial.Serial(serial_port, baud_rate)
+
+    def calculate_perimeter(self, bbox):
+
+        x1, y1, x2, y2 = bbox[0]
+        width = x2 - x1
+        height = y2 - y1
+        perimeter = 2 * (width + height)
+        return perimeter
 
     def detect_armor(self, img):
 
@@ -20,15 +30,22 @@ class ArmorDetector:
 
         for result in results:
             for box in result.boxes:
-                class_id = int(box.cls)  # 获取类别ID
-                confidence = box.conf    # 获取置信度
-                detections.append({
-                    'class_id': class_id,
-                    'confidence': confidence,
-                    'bbox': box.xyxy.tolist()  # 获取边界框坐标
-                })
-        
+
+                class_id   = box.cls            # 获取类别ID
+                confidence = float(box.conf)    # 获取置信度
+                boxx       = box.xyxy.tolist()  # 获取边界框坐标
+
+                detections.append(
+                    {
+                        "class_id": class_id,
+                        "confidence": float(confidence),
+                        "bbox": boxx, 
+                        "size": self.calculate_perimeter(boxx),
+                    }
+                )
+
         return img, detections
+
 
     @staticmethod
     def find_available_cameras(start_index=0, end_index=9):
@@ -44,8 +61,8 @@ class ArmorDetector:
         if camera_index is None:
             camera_index = self.find_available_cameras()
 
-        self.logger.info(f'可用摄像头：{camera_index}')
-        self.logger.info('开始预测')
+        self.logger.info(f"可用摄像头：{camera_index}")
+        self.logger.info("开始预测")
 
         cap = cv2.VideoCapture(camera_index[0])
         # cap = cv2.VideoCapture("/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/test.mp4")
@@ -56,20 +73,24 @@ class ArmorDetector:
                 if ret:
                     PD_frame, max_center = self.detect_armor(frame)
 
-                    logger.info(f'预测结果：{max_center}')
+                    logger.info(f"预测结果：{max_center}")
 
-                    cv2.namedWindow("frame", cv2.WINDOW_NORMAL)
-                    cv2.imshow("frame", PD_frame)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        break
+                    if not os.isatty(0):
+                        cv2.namedWindow("frame", cv2.WINDOW_NORMAL)
+                        cv2.imshow("frame", PD_frame)
+                        if cv2.waitKey(1) & 0xFF == ord("q"):
+                            break
 
         cv2.destroyAllWindows()
         if cap is not None:
             cap.release()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # OpenVINO模型路径
-    ov_model_path = "/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best_openvino_model/"
+    ov_model_path = (
+        "/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best_openvino_model/"
+    )
     detector = ArmorDetector(ov_model_path)
 
     # detector = ArmorDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best.pt')
