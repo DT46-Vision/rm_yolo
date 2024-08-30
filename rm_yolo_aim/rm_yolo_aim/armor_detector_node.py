@@ -14,9 +14,11 @@ from cv_bridge import CvBridge          # ROS与OpenCV图像转换类
 import cv2                              # Opencv图像处理库
 import numpy as np                      # Python数值计算库
 
+from rosidl_runtime_py.set_message import set_message_fields # Python 字典 -> ROS2 消息
+
 from rm_yolo_aim.armor_detector import ArmorDetector
 
-detector = ArmorDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best.pt')
+detector = ArmorDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best_openvino_model/')
 
 class ImageSubscriber(Node):
     def __init__(self, name):
@@ -27,9 +29,11 @@ class ImageSubscriber(Node):
         self.publisher_uart = self.create_publisher(String, '/uart_msg_send', 10)       # 创建串口信息发布者
         self.cv_bridge = CvBridge()                           # 创建图像转换对象
 
+        self.uart_msg_send = String()                        # 串口信息发布消息对象
+
     def listener_callback(self, data):
         image = self.cv_bridge.imgmsg_to_cv2(data, 'bgr8')    # 将ROS的图像消息转化成OpenCV图像
-        img, uart_msg = detector.detect_armor(image)               # 检测图像
+        img, armor_dict = detector.detect_armor(image)               # 检测图像
 
         # 发布处理后的图像
         result_img_msg = self.cv_bridge.cv2_to_imgmsg(img, 'bgr8')
@@ -37,9 +41,9 @@ class ImageSubscriber(Node):
         self.get_logger().info('Published processed image to /detector/result_img')
 
         # 发布串口信息
-        uart_msg_msg = String(data=str(uart_msg))
-        self.publisher_uart.publish(uart_msg_msg)
-        self.get_logger().info(f'Published UART message: {uart_msg}')
+        set_message_fields(self.uart_msg_send, armor_dict)    # Python 字典 -> ROS2 消息
+        self.publisher_uart.publish(self.uart_msg_send)
+        self.get_logger().info(f'Published UART message: {self.uart_msg_send}')
 
 def main(args=None):                            # ROS2节点主入口main函数
     rclpy.init(args=args)                       # ROS2 Python接口初始化
