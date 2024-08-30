@@ -1,1 +1,3 @@
+# ArmorList.msg
+
 ArmorInfo[] armors

@@ -49,8 +49,8 @@ class ArmorDetector:
                 # 使用 center_x 作为键，装甲信息作为值
                 armors[str(center_x)] = {
                     "class_id": class_id,
-                    "confidence": confidence,
-                    "bbox": boxx,
+                    # "confidence": confidence, # 置信度
+                    # "bbox": boxx, # 边界框坐标
                     "size": size,
                     "center": [center_x, center_y]
                 }
@@ -84,7 +84,7 @@ class ArmorDetector:
                 if ret:
                     PD_frame, max_center = self.detect_armor(frame)
 
-                    logger.info(f"预测结果：{max_center}")
+                    logger.info(f"预测结果：\n{max_center}")
 
                     if not os.isatty(0):
                         cv2.namedWindow("frame", cv2.WINDOW_NORMAL)

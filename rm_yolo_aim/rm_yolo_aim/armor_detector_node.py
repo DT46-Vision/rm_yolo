@@ -5,6 +5,7 @@ from std_msgs.msg import String         # 字符串消息类型
 from cv_bridge import CvBridge          # ROS与OpenCV图像转换类
 import cv2                              # Opencv图像处理库
 import numpy as np                      # Python数值计算库
+import json
 
 from rosidl_runtime_py.set_message import set_message_fields # Python 字典 -> ROS2 消息
 
