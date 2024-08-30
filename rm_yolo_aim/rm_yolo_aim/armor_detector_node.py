@@ -18,7 +18,8 @@ from rosidl_runtime_py.set_message import set_message_fields # Python 字典 -> 
 
 from rm_yolo_aim.armor_detector import ArmorDetector
 
-detector = ArmorDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best_openvino_model/')
+# detector = ArmorDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best.pt')             # pt 原始模型
+detector = ArmorDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best_openvino_model/')  # openvino 模型
 
 class ImageSubscriber(Node):
     def __init__(self, name):
