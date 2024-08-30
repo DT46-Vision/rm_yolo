@@ -18,15 +18,15 @@ class ArmorDetector:
         x1, y1, x2, y2 = bbox[0]
         width = x2 - x1
         height = y2 - y1
-        perimeter = 2 * (width + height)
+        perimeter = int(2 * (width + height))
 
         return perimeter
-    
+
     def calculate_center(self, bbox, img):
         x1, y1, x2, y2 = bbox[0]
         height, width = img.shape[:2]
 
-        center_x = int((x1 + x2) / 2 - (width  / 2))
+        center_x = int((x1 + x2) / 2 - (width / 2))
         center_y = int((y1 + y2) / 2 - (height / 2))
 
         return center_x, center_y
@@ -39,24 +39,22 @@ class ArmorDetector:
 
         for result in results:
             for box in result.boxes:
-                class_id = int(box.cls)       # 获取类别ID
+                class_id = int(box.cls)  # 获取类别ID
                 confidence = float(box.conf)  # 获取置信度
-                boxx = box.xyxy.tolist()      # 获取边界框坐标
+                boxx = box.xyxy.tolist()  # 获取边界框坐标
 
                 size = self.calculate_perimeter(boxx)
                 center_x, center_y = self.calculate_center(boxx, img)
 
-                # 使用 center_x 作为键，装甲信息作为值
                 armors[str(center_x)] = {
                     "class_id": class_id,
                     # "confidence": confidence, # 置信度
                     # "bbox": boxx, # 边界框坐标
                     "size": size,
-                    "center": [center_x, center_y]
+                    "center": [center_x, center_y],
                 }
 
         return img, armors
-
 
     @staticmethod
     def find_available_cameras(start_index=0, end_index=9):
@@ -106,3 +104,10 @@ if __name__ == "__main__":
 
     # detector = ArmorDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best.pt')
     detector.start_detection()
+
+    {
+        "179": {"class_id": 7, "size": 290, "center": [179, 35]},
+        "-143": {"class_id": 3, "size": 288, "center": [-143, -35]},
+        "149": {"class_id": 3, "size": 191, "center": [149, 36]},
+        "-113": {"class_id": 2, "size": 300, "center": [-113, -35]},
+    }
