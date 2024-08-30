@@ -1,3 +1,4 @@
+from networkx import center
 from ultralytics import YOLO
 import cv2
 import os
@@ -18,33 +19,43 @@ class ArmorDetector:
         width = x2 - x1
         height = y2 - y1
         perimeter = 2 * (width + height)
+
         return perimeter
+    
+    def calculate_center(self, bbox, img):
+        x1, y1, x2, y2 = bbox[0]
+        height, width = img.shape[:2]
+
+        center_x = int((x1 + x2) / 2 - (width  / 2))
+        center_y = int((y1 + y2) / 2 - (height / 2))
+
+        return center_x, center_y
 
     def detect_armor(self, img):
-
         results = self.model(img)
-
         img = results[0].plot()  # 获取绘制后的图像
 
-        detections = []
+        armors = {}
 
         for result in results:
             for box in result.boxes:
+                class_id = int(box.cls)       # 获取类别ID
+                confidence = float(box.conf)  # 获取置信度
+                boxx = box.xyxy.tolist()      # 获取边界框坐标
 
-                class_id   = box.cls            # 获取类别ID
-                confidence = float(box.conf)    # 获取置信度
-                boxx       = box.xyxy.tolist()  # 获取边界框坐标
+                size = self.calculate_perimeter(boxx)
+                center_x, center_y = self.calculate_center(boxx, img)
 
-                detections.append(
-                    {
-                        "class_id": class_id,
-                        "confidence": float(confidence),
-                        "bbox": boxx, 
-                        "size": self.calculate_perimeter(boxx),
-                    }
-                )
+                # 使用 center_x 作为键，装甲信息作为值
+                armors[str(center_x)] = {
+                    "class_id": class_id,
+                    "confidence": confidence,
+                    "bbox": boxx,
+                    "size": size,
+                    "center": [center_x, center_y]
+                }
 
-        return img, detections
+        return img, armors
 
 
     @staticmethod

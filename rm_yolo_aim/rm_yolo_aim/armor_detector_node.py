@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-@作者: 古月居(www.guyuehome.com)
-@说明: ROS2话题示例-订阅图像话题并发布处理结果
-"""
-
 import rclpy                            # ROS2 Python接口库
 from rclpy.node import Node             # ROS2 节点类
 from sensor_msgs.msg import Image       # 图像消息类型
@@ -30,11 +22,11 @@ class ImageSubscriber(Node):
         self.publisher_uart = self.create_publisher(String, '/uart_msg_send', 10)       # 创建串口信息发布者
         self.cv_bridge = CvBridge()                           # 创建图像转换对象
 
-        self.uart_msg_send = String()                        # 串口信息发布消息对象
+        self.uart_msg_send = String()                         # 串口信息发布消息对象
 
     def listener_callback(self, data):
         image = self.cv_bridge.imgmsg_to_cv2(data, 'bgr8')    # 将ROS的图像消息转化成OpenCV图像
-        img, armor_dict = detector.detect_armor(image)               # 检测图像
+        img, armors_dict = detector.detect_armor(image)        # 检测图像
 
         # 发布处理后的图像
         result_img_msg = self.cv_bridge.cv2_to_imgmsg(img, 'bgr8')
@@ -42,7 +34,7 @@ class ImageSubscriber(Node):
         self.get_logger().info('Published processed image to /detector/result_img')
 
         # 发布串口信息
-        set_message_fields(self.uart_msg_send, armor_dict)    # Python 字典 -> ROS2 消息
+        set_message_fields(self.uart_msg_send, armors_dict)    # Python 字典 -> ROS2 消息
         self.publisher_uart.publish(self.uart_msg_send)
         self.get_logger().info(f'Published UART message: {self.uart_msg_send}')
 
