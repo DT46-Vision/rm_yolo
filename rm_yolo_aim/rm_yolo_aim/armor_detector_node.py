@@ -1,3 +1,4 @@
+# armor_detector_node.py
 import rclpy                            # ROS2 Python接口库
 from rclpy.node import Node             # ROS2 节点类
 from sensor_msgs.msg import Image       # 图像消息类型
@@ -13,13 +14,13 @@ from rm_interfaces.msg import ArmorsMsg  # 导入自定义消息类型
 # detector = ArmorDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best.pt')             # pt 原始模型
 detector = ArmorDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best_openvino_model/')  # openvino 模型
 
-class ImageSubscriber(Node):
+class ArmorDetectorNode(Node):
     def __init__(self, name):
         super().__init__(name)                                # ROS2节点父类初始化
         self.sub = self.create_subscription(
             Image, 'image_raw', self.listener_callback, 10)   # 创建订阅者对象
-        self.publisher_img  = self.create_publisher(Image, '/armors_img', 10)  # 创建图像发布者
-        self.publisher_armors = self.create_publisher(ArmorsMsg, '/armors_info', 10)  # 创建串口信息发布者
+        self.publisher_img  = self.create_publisher(Image, '/detector/armors_img', 10)  # 创建图像发布者
+        self.publisher_armors = self.create_publisher(ArmorsMsg, '/detector/armors_info', 10)  # 创建串口信息发布者
         self.cv_bridge = CvBridge()                           # 创建图像转换对象
 
     def listener_callback(self, data):
@@ -49,7 +50,7 @@ class ImageSubscriber(Node):
 
 def main(args=None):                            # ROS2节点主入口main函数
     rclpy.init(args=args)                       # ROS2 Python接口初始化
-    node = ImageSubscriber("armor_detector_node")       # 创建ROS2节点对象
+    node = ArmorDetectorNode("armor_detector_node")       # 创建ROS2节点对象
     rclpy.spin(node)                            # 循环等待ROS2退出
     node.destroy_node()                         # 销毁节点对象
     rclpy.shutdown()                            # 关闭ROS2 Python接口
