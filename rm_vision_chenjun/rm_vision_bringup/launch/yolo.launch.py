@@ -22,7 +22,7 @@ def generate_launch_description():
             DeclareLaunchArgument(name="use_sensor_data_qos", default_value="false"),
             Node(
                 package="rm_yolo_aim",
-                executable="predit_node",
+                executable="armor_detector_node",
                 output="screen",
                 emulate_tty=True,
             ),
