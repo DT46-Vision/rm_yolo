@@ -10,7 +10,10 @@ class ArmorTrackerNode(Node):
         self.sub_armors = self.create_subscription(
             ArmorsMsg, '/detector/armors_info', self.listener_callback_armors, 10)  # 订阅装甲板信息
         self.sub_serial = self.create_subscription(
-            String, '/serial_data', self.listener_callback_serial, 10)  # 订阅串口数据
+            String, '/uart_receive', self.listener_callback_serial, 10)  # 订阅串口数据
+        self.pub_tracker = self.create_publisher(String, '/tracker/target', 10)
+        
+        self.tracking_color = None
 
     def listener_callback_armors(self, msg):
         # 获取消息头信息
@@ -21,7 +24,9 @@ class ArmorTrackerNode(Node):
         armors_dict = json.loads(msg.data)
         self.get_logger().info(f'Received armors data: {armors_dict}')
 
+
         # 这里可以对armors_dict进行进一步处理
+
 
     def listener_callback_serial(self, msg):
         # 获取串口数据
