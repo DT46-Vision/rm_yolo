@@ -18,8 +18,8 @@ class ImageSubscriber(Node):
         super().__init__(name)                                # ROS2节点父类初始化
         self.sub = self.create_subscription(
             Image, 'image_raw', self.listener_callback, 10)   # 创建订阅者对象
-        self.publisher_img  = self.create_publisher(Image, '/detector/result_img', 10)  # 创建图像发布者
-        self.publisher_armors = self.create_publisher(ArmorsMsg, '/uart_msg_send', 10)  # 创建串口信息发布者
+        self.publisher_img  = self.create_publisher(Image, '/armors_img', 10)  # 创建图像发布者
+        self.publisher_armors = self.create_publisher(ArmorsMsg, '/armors_info', 10)  # 创建串口信息发布者
         self.cv_bridge = CvBridge()                           # 创建图像转换对象
 
     def listener_callback(self, data):
@@ -29,7 +29,7 @@ class ImageSubscriber(Node):
         # 发布处理后的图像
         result_img_msg = self.cv_bridge.cv2_to_imgmsg(img, 'bgr8')
         self.publisher_img.publish(result_img_msg)
-        self.get_logger().info('Published processed image to /detector/result_img')
+        # self.get_logger().info('Published processed image to /detector/result_img')
 
         # 将装甲板信息字典转换为JSON格式的字符串
         armors_json = json.dumps(armors_dict)
@@ -38,7 +38,7 @@ class ImageSubscriber(Node):
         armors_msg = ArmorsMsg()
         armors_msg.header = Header()  # 创建并设置Header
         armors_msg.header.stamp = self.get_clock().now().to_msg()  # 设置时间戳
-        armors_msg.header.frame_id = 'armor_frame'  # 可根据需要设置frame_id
+        armors_msg.header.frame_id = 'armors_frame'  # 可根据需要设置frame_id
 
         # 设置JSON格式的装甲板信息
         armors_msg.data = armors_json
