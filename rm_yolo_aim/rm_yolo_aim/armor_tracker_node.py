@@ -32,11 +32,12 @@ class ArmorTrackerNode(Node):
             self.tracking_armor = select_tracking_armor(armors_dict, 0)  # 0表示红色
             self.get_logger().info(f"get tracking_armor {self.tracking_armor}")
 
-            self.tracking_angle = pixel_to_angle_and_deep(self.tracking_armor, 72) 
+            yaw, pitch, deep = pixel_to_angle_and_deep(self.tracking_armor, 72) 
+
+            self.get_logger().info(f"yaw, pitch, deep: {yaw, pitch, deep}")
             
             # 将装甲板信息字典转换为msg消息定义的格式
             tracking_armor_json = json.dumps(self.tracking_armor)
-            yaw, pitch, deep = self.tracking_angle
 
             # 创建自定义消息对象并添加Header
             tracking_armor_msg = ArmorTracking()
@@ -53,6 +54,7 @@ class ArmorTrackerNode(Node):
             # 发布消息
             self.pub_tracker.publish(tracking_armor_msg)
             self.get_logger().info(f'Published tracker message: {tracking_armor_msg.data}')
+            self.get_logger().info(f"Preparing to publish: yaw={tracking_armor_msg.yaw}, pitch={tracking_armor_msg.pitch}, deep={tracking_armor_msg.deep}")
 
         except json.JSONDecodeError as e:
             self.get_logger().error(f'Failed to decode JSON: {e}')

@@ -24,7 +24,7 @@ class ArmorDetector:
     def calculate_height(self, bbox):
 
         x1, y1, x2, y2 = bbox[0]
-        height = y2 - y1
+        height = int(y2 - y1)
 
         return height
 
