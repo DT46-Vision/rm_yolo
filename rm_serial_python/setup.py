@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'rm_serial_node = rm_serial_python.rm_serial_node:main',
         ],
     },
 )
