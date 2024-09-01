@@ -43,7 +43,6 @@ class ArmorDetectorNode(Node):
 
         # 设置JSON格式的装甲板信息
         armors_msg.data = armors_json
-        armors_msg.deep = 321
 
         # 发布消息
         self.publisher_armors.publish(armors_msg)
