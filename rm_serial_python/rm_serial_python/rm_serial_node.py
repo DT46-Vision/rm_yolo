@@ -2,6 +2,7 @@ import time
 import serial
 import threading
 import struct
+import zlib
 
 import rclpy
 from rclpy.node import Node
@@ -91,16 +92,25 @@ class RMSerialDriver(Node):
             
             self.get_logger().info(f"发送数据: {msg}")
 
+            header = 0x5A
+
             packet = struct.pack(
-                "<fff",
+                "<Bfff",
+                header,
                 msg.yaw,
                 msg.pitch,
                 msg.deep,
             )
 
-            self.get_logger().info(f"打包后的数据: {packet}")
+            # 计算校验和
+            checksum = zlib.crc32(packet) & 0xFFFF  # 取低16位作为校验和
 
-            self.serial_port.write(packet)
+            # 将校验和添加到数据包中
+            packet_with_checksum = packet + struct.pack("<H", checksum)
+
+            self.get_logger().info(f"打包后的数据: {packet_with_checksum}")
+
+            self.serial_port.write(packet_with_checksum)
 
         except Exception as e:
             self.get_logger().error(f"发送数据时出错: {str(e)}")
