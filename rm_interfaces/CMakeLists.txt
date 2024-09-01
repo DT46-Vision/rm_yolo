@@ -28,8 +28,7 @@ find_package(std_msgs REQUIRED)
 
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/ArmorInfo.msg"
-  "msg/ArmorList.msg"
+  "msg/ArmorTracking.msg"
   "msg/ArmorsMsg.msg"
 
   DEPENDENCIES std_msgs
