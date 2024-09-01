@@ -53,8 +53,8 @@ class ArmorTrackerNode(Node):
 
             # 发布消息
             self.pub_tracker.publish(tracking_armor_msg)
-            self.get_logger().info(f'Published tracker message: {tracking_armor_msg.data}')
-            self.get_logger().info(f"Preparing to publish: yaw={tracking_armor_msg.yaw}, pitch={tracking_armor_msg.pitch}, deep={tracking_armor_msg.deep}")
+            # self.get_logger().info(f'Published tracker message: {tracking_armor_msg.data}')
+            # self.get_logger().info(f"Preparing to publish: yaw={tracking_armor_msg.yaw}, pitch={tracking_armor_msg.pitch}, deep={tracking_armor_msg.deep}")
 
         except json.JSONDecodeError as e:
             self.get_logger().error(f'Failed to decode JSON: {e}')
