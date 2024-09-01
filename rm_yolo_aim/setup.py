@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'armor_detector_node = rm_yolo_aim.armor_detector_node:main',
+            'armor_tracker_node = rm_yolo_aim.armor_tracker_node:main',
         ],
     },
 )

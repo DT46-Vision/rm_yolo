@@ -1,3 +1,0 @@
-# ArmorList.msg
-
-ArmorInfo[] armors

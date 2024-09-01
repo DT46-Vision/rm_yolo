@@ -1,31 +1,53 @@
+import json                             # JSON序列化库
+
 import rclpy                            # ROS2 Python接口库
 from rclpy.node import Node             # ROS2 节点类
 from std_msgs.msg import String, Header # 字符串消息类型和头部消息类型
-from rm_interfaces.msg import ArmorsMsg  # 导入自定义消息类型
-import json                             # JSON序列化库
+
+from rm_interfaces.msg import ArmorsMsg, ArmorTracking  # 导入自定义消息类型
+from rm_yolo_aim.armor_tracker import select_tracking_armor
 
 class ArmorTrackerNode(Node):
     def __init__(self, name):
-        super().__init__(name)                               # ROS2节点父类初始化
+        super().__init__(name)  # ROS2节点父类初始化
+
         self.sub_armors = self.create_subscription(
             ArmorsMsg, '/detector/armors_info', self.listener_callback_armors, 10)  # 订阅装甲板信息
         self.sub_serial = self.create_subscription(
-            String, '/uart_receive', self.listener_callback_serial, 10)  # 订阅串口数据
-        self.pub_tracker = self.create_publisher(String, '/tracker/target', 10)
+            String, '/uart/receive', self.listener_callback_serial, 10)  # 订阅串口数据
+        
+        self.pub_tracker = self.create_publisher(ArmorTracking, '/tracker/target', 10)
         
         self.tracking_color = None
+        self.tracking_armor = None
 
     def listener_callback_armors(self, msg):
-        # 获取消息头信息
-        header = msg.header
-        self.get_logger().info(f'Received armors message with timestamp: {header.stamp.sec}.{header.stamp.nanosec} and frame_id: {header.frame_id}')
+        try:
+            # 将JSON格式的数据转换回Python字典
+            armors_dict = json.loads(msg.data)
+            # self.get_logger().info(f'Received armors data: {armors_dict}')
 
-        # 将JSON格式的数据转换回Python字典
-        armors_dict = json.loads(msg.data)
-        self.get_logger().info(f'Received armors data: {armors_dict}')
+            # 选择要跟踪的装甲板
+            self.tracking_armor = select_tracking_armor(armors_dict, 0)  # 0表示红色
 
+            # 将装甲板信息字典转换为JSON格式的字符串
+            tracking_armor_json = json.dumps(self.tracking_armor)
 
-        # 这里可以对armors_dict进行进一步处理
+            # 创建自定义消息对象并添加Header
+            tracking_armor_msg = ArmorTracking()
+            tracking_armor_msg.header = Header()  # 创建并设置Header
+            tracking_armor_msg.header.stamp = self.get_clock().now().to_msg()  # 设置时间戳
+            tracking_armor_msg.header.frame_id = 'tracking_armor_frame'  # 可根据需要设置frame_id
+
+            # 设置JSON格式的装甲板信息
+            tracking_armor_msg.data = tracking_armor_json
+
+            # 发布消息
+            self.pub_tracker.publish(tracking_armor_msg)
+            self.get_logger().info(f'Published tracker message: {tracking_armor_msg.data}')
+
+        except json.JSONDecodeError as e:
+            self.get_logger().error(f'Failed to decode JSON: {e}')
 
 
     def listener_callback_serial(self, msg):
