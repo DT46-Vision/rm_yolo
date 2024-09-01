@@ -33,7 +33,7 @@ class ArmorDetector:
         height, width = img.shape[:2]
 
         center_x = int((x1 + x2) / 2 - (width / 2))
-        center_y = int((y1 + y2) / 2 - (height / 2))
+        center_y = -int((y1 + y2) / 2 - (height / 2)) # 图片的y轴和准星的y轴是反的
 
         return center_x, center_y
 
