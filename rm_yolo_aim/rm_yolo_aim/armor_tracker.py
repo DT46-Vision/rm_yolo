@@ -1,3 +1,4 @@
+from ast import Not
 import math
 from loguru import logger
 
@@ -34,20 +35,29 @@ def select_tracking_armor(armors_dict, color):
 def pixel_to_angle_and_deep(tracking_armor, vfov):
     # 哨兵相机 水平 FOV 72°，垂直 FOV 60°
     # 步兵相机 待测量
-    height = tracking_armor["height"]
-    center = tracking_armor["center"]
+    if not tracking_armor:  # 检查 tracking_armor 是否为空
+        logger.info("tracking_armor is empty, returning default values.")
+        return [0, 0, 0]
 
-    # 估计距离
-    deep = height
+    try:
+        height = tracking_armor["height"]
+        center = tracking_armor["center"]
 
-    # 相机 x, y 坐标系下投影面的 Z 轴距离(单位: 像素)
-    focal_pixel_distance = center[0] / math.tan(vfov / 2 * DEG2RAD)
+        # 估计距离
+        deep = height
 
-    # 计算角度
-    yaw    = math.atan(center[0] / focal_pixel_distance) * RAD2DEG
-    pitch  = math.atan(center[1] / focal_pixel_distance) * RAD2DEG
+        # 相机 x, y 坐标系下投影面的 Z 轴距离(单位: 像素)
+        focal_pixel_distance = center[0] / math.tan(vfov / 2 * DEG2RAD)
 
-    return yaw, pitch, deep
+        # 计算角度
+        yaw = math.atan(center[0] / focal_pixel_distance) * RAD2DEG
+        pitch = math.atan(center[1] / focal_pixel_distance) * RAD2DEG
+
+        return yaw, pitch, deep
+
+    except TypeError as e:
+        logger.info(f"pixel_to_angle_and_deep TypeError: {e}")
+        return [0.0, 0.0, 0.0]
 
 
 if __name__ == "__main__":
@@ -60,6 +70,7 @@ if __name__ == "__main__":
     }
 
     result = select_tracking_armor(armors_dict, 0)
+    result = {}
 
     yaw, pitch, deep = pixel_to_angle_and_deep(result, 72)
     
