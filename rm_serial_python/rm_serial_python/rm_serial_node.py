@@ -8,7 +8,7 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String, Header  # 字符串消息类型和头部消息类型
-from rm_interfaces.msg import ArmorTracking # , SerialReceive # 导入自定义消息类型
+from rm_interfaces.msg import ArmorTracking ,SerialReceive # 导入自定义消息类型
 
 
 class RMSerialDriver(Node):
@@ -26,7 +26,7 @@ class RMSerialDriver(Node):
         )
 
         # 创建发布者
-        # self.pub_uart_receive = self.create_publisher(String, "/uart/receive", 10)
+        self.pub_uart_receive = self.create_publisher(String, "/uart/receive", 10)
         
         # 初始化串口
         try:
@@ -38,8 +38,8 @@ class RMSerialDriver(Node):
             )
             if self.serial_port.is_open:
                 self.get_logger().info("创建串口 successfully.")
-                # self.receive_thread = threading.Thread(target=self.receive_data)
-                # self.receive_thread.start()
+                self.receive_thread = threading.Thread(target=self.receive_data)
+                self.receive_thread.start()
 
         except serial.SerialException as e:
             self.get_logger().error(f"创建串口时出错: {self.device_name} - {str(e)}")
@@ -47,42 +47,49 @@ class RMSerialDriver(Node):
 
     def get_params(self):
         """获取并设置串口相关的参数"""
-        self.device_name  = self.declare_parameter("device_name", "/dev/ttyUSB0").value
+        self.device_name  = self.declare_parameter("device_name", "/dev/ttyUSB1").value
         self.baud_rate    = self.declare_parameter("baud_rate", 115200).value
         self.flow_control = self.declare_parameter("flow_control", "none").value
         self.parity       = self.declare_parameter("parity", "none").value
         self.stop_bits    = self.declare_parameter("stop_bits", "1").value
-
-    # def process_packet(self, packet):
-    #     """处理接收到的包数据"""
-    #     # 校验并处理 CRC (这里可以加上 CRC 校验)
-    #     detect_color = packet[1]
-
-    #     # 更新目标颜色参数
-    #     if detect_color != self.tracking_color:
-    #         self.tracking_color = detect_color
         
-    # def receive_data(self):
-    #     """接收串口数据并处理"""
-    #     while rclpy.ok():
-    #         try:
-    #             # 读取数据头部
-    #             header = self.serial_port.read(1)
-    #             if header and header[0] == 0x5A:
-    #                 data = self.serial_port.read(29)
+    def receive_data(self):
+        """接收串口数据并处理"""
+        while rclpy.ok():
+            try:
+                # 读取数据头部
+                header = self.serial_port.read(1)
+                if header and header[0] == 0x5A:
+                    data = self.serial_port.read(16)  # 读取16字节的数据
 
-    #                 if len(data) == 29:
-    #                     packet = struct.unpack("<Bffffff?", header + data)
-    #                     self.process_packet(packet)
+                    if len(data) == 16:
+                        packet = struct.unpack("<B?fffH", header + data)  # 注意这里的格式字符串
+                        self.process_packet(packet)
 
-    #                 else:
-    #                     self.get_logger().warn("Received data length mismatch")
-    #             else:
-    #                 self.get_logger().warn("Invalid header received")
+                        # 更新目标颜色参数
+                        if packet[1] != self.tracking_color:
+                            self.tracking_color = packet[1]
+                        
+                            # 创建自定义消息对象并添加Header
+                            serial_receive_msg = SerialReceive()
+                            serial_receive_msg.header = Header()  # 创建并设置Header
+                            serial_receive_msg.header.stamp = self.get_clock().now().to_msg()  # 设置时间戳
+                            serial_receive_msg.header.frame_id = 'serial_receive_frame'  # 可根据需要设置frame_id
 
-    #         except serial.SerialException as e:
-    #             self.get_logger().error(f"接收数据时出错: {str(e)}")
-    #             self.reopen_port()
+                            # 更新颜色
+                            serial_receive_msg.tracking_color = self.tracking_color
+
+                            # 发布消息
+                            self.pub_uart_receive.publish(serial_receive_msg)
+
+                    else:
+                        self.get_logger().warn("Received data length mismatch")
+                else:
+                    self.get_logger().warn("Invalid header received, 没有数据")
+
+            except serial.SerialException as e:
+                self.get_logger().error(f"接收数据时出错: {str(e)}")
+                self.reopen_port()
 
     def send_data(self, msg):
         """处理目标信息并通过串口发送"""
@@ -93,19 +100,20 @@ class RMSerialDriver(Node):
             self.get_logger().info(f"发送数据: {msg}")
 
             header = 0x5A
+            yaw    = msg.yaw,
+            pitch  = msg.pitch,
+            deep   = msg.deep,
 
             packet = struct.pack(
                 "<Bfff",
                 header,
-                msg.yaw,
-                msg.pitch,
-                msg.deep,
+                yaw,
+                pitch,
+                deep,
             )
 
             # 计算校验和
             checksum = zlib.crc32(packet) & 0xFFFF  # 取低16位作为校验和
-
-            # 将校验和添加到数据包中
             packet_with_checksum = packet + struct.pack("<H", checksum)
 
             self.get_logger().info(f"打包后的数据: {packet_with_checksum}")
