@@ -28,6 +28,9 @@ class RMSerialDriver(Node):
         # 创建发布者
         self.pub_uart_receive = self.create_publisher(String, "/uart/receive", 10)
         
+        # 创建变量
+        self.tracking_color = 0
+        
         # 初始化串口
         try:
             self.serial_port = serial.Serial(
@@ -47,7 +50,7 @@ class RMSerialDriver(Node):
 
     def get_params(self):
         """获取并设置串口相关的参数"""
-        self.device_name  = self.declare_parameter("device_name", "/dev/ttyUSB1").value
+        self.device_name  = self.declare_parameter("device_name", "/dev/ttyUSB0").value
         self.baud_rate    = self.declare_parameter("baud_rate", 115200).value
         self.flow_control = self.declare_parameter("flow_control", "none").value
         self.parity       = self.declare_parameter("parity", "none").value
@@ -56,7 +59,12 @@ class RMSerialDriver(Node):
     def receive_data(self):
         """接收串口数据并处理"""
         while rclpy.ok():
-            try:
+            try:         
+                serial_receive_msg = SerialReceive()  # 创建并设置消息
+                serial_receive_msg.header = Header()  # 创建并设置Header
+                serial_receive_msg.header.stamp = self.get_clock().now().to_msg()  # 设置时间戳
+                serial_receive_msg.header.frame_id = 'serial_receive_frame'  # 可根据需要设置frame_id
+                                
                 # 读取数据头部
                 header = self.serial_port.read(1)
                 if header and header[0] == 0x5A:
@@ -64,28 +72,20 @@ class RMSerialDriver(Node):
 
                     if len(data) == 16:
                         packet = struct.unpack("<B?fffH", header + data)  # 注意这里的格式字符串
-                        self.process_packet(packet)
 
                         # 更新目标颜色参数
                         if packet[1] != self.tracking_color:
                             self.tracking_color = packet[1]
-                        
-                            # 创建自定义消息对象并添加Header
-                            serial_receive_msg = SerialReceive()
-                            serial_receive_msg.header = Header()  # 创建并设置Header
-                            serial_receive_msg.header.stamp = self.get_clock().now().to_msg()  # 设置时间戳
-                            serial_receive_msg.header.frame_id = 'serial_receive_frame'  # 可根据需要设置frame_id
-
                             # 更新颜色
                             serial_receive_msg.tracking_color = self.tracking_color
-
-                            # 发布消息
-                            self.pub_uart_receive.publish(serial_receive_msg)
 
                     else:
                         self.get_logger().warn("Received data length mismatch")
                 else:
                     self.get_logger().warn("Invalid header received, 没有数据")
+
+                # 发送ROS消息
+                self.pub_uart_receive.publish(serial_receive_msg)
 
             except serial.SerialException as e:
                 self.get_logger().error(f"接收数据时出错: {str(e)}")
@@ -100,9 +100,11 @@ class RMSerialDriver(Node):
             self.get_logger().info(f"发送数据: {msg}")
 
             header = 0x5A
-            yaw    = msg.yaw,
-            pitch  = msg.pitch,
-            deep   = msg.deep,
+            yaw    = msg.yaw
+            pitch  = msg.pitch
+            deep   = msg.deep
+
+            print(f"yaw type: {yaw}, pitch type: {pitch}, deep type: {deep}")
 
             packet = struct.pack(
                 "<Bfff",
