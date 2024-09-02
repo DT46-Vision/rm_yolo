@@ -23,6 +23,14 @@ def generate_launch_description():
         
         # 启动armor_detector_node
         Node(
+            package="rm_serial_python",
+            executable="rm_serial_node",
+            output="screen",
+            emulate_tty=True,
+        ),        
+
+        # 启动armor_detector_node
+        Node(
             package="rm_yolo_aim",
             executable="armor_detector_node",
             output="screen",

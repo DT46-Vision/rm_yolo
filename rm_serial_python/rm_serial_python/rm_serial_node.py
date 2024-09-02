@@ -78,14 +78,15 @@ class RMSerialDriver(Node):
                             self.tracking_color = packet[1]
                             # 更新颜色
                             serial_receive_msg.tracking_color = self.tracking_color
-
+                            
+                            # 发送ROS消息
+                            self.pub_uart_receive.publish(serial_receive_msg)
                     else:
                         self.get_logger().warn("Received data length mismatch")
                 else:
                     self.get_logger().warn("Invalid header received, 没有数据")
 
-                # 发送ROS消息
-                self.pub_uart_receive.publish(serial_receive_msg)
+                
 
             except serial.SerialException as e:
                 self.get_logger().error(f"接收数据时出错: {str(e)}")
@@ -97,7 +98,7 @@ class RMSerialDriver(Node):
             id_map =   ["B1", "B2", "B3", "B4", "B5", "B7", 
                         "R1", "R2", "R3", "R4", "R5", "R7"]
             
-            self.get_logger().info(f"发送数据: {msg}")
+            # self.get_logger().info(f"发送数据: {msg}")
 
             header = 0x5A
             yaw    = msg.yaw
