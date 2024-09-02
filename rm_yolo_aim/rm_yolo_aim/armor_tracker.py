@@ -32,9 +32,7 @@ def select_tracking_armor(armors_dict, color):
 
     return tracking_armor
 
-def pixel_to_angle_and_deep(tracking_armor, vfov):
-    # 哨兵相机 水平 FOV 72°，垂直 FOV 60°
-    # 步兵相机 待测量
+def pixel_to_angle_and_deep(tracking_armor, vfov, pic_width):
     if not tracking_armor:  # 检查 tracking_armor 是否为空
         logger.info("tracking_armor is empty, returning default values.")
         return [0, 0, 0]
@@ -42,31 +40,42 @@ def pixel_to_angle_and_deep(tracking_armor, vfov):
     try:
         height = tracking_armor["height"]
         center = tracking_armor["center"]
+        logger.info(f"height: {height}, center: {center}")
 
         # 估计距离
         deep = height
 
+        # 确保 vfov 是以弧度为单位
+        vfov_radians = vfov * DEG2RAD
+
         # 相机 x, y 坐标系下投影面的 Z 轴距离(单位: 像素)
-        focal_pixel_distance = center[0] / math.tan(vfov / 2 * DEG2RAD)
+        focal_pixel_distance = (pic_width / 2) / math.tan(vfov_radians / 2)
+
+        # 确保 focal_pixel_distance 不为零
+        if focal_pixel_distance == 0:
+            logger.warning("focal_pixel_distance is zero, returning default angles.")
+            return [0, 0, deep]
 
         # 计算角度
-        yaw = math.atan(center[0] / focal_pixel_distance) * RAD2DEG
+        yaw   = math.atan(center[0] / focal_pixel_distance) * RAD2DEG
         pitch = math.atan(center[1] / focal_pixel_distance) * RAD2DEG
+
+        logger.info(f"这里的计算 {yaw, pitch, deep}")
 
         return yaw, pitch, deep
 
-    except TypeError as e:
-        logger.info(f"pixel_to_angle_and_deep TypeError: {e}")
-        return [0.0, 0.0, 0.0]
+    except Exception as e:
+        logger.error(f"Error in pixel_to_angle_and_deep: {e}")
+        return [0, 0, 0]
 
 
 if __name__ == "__main__":
 
     armors_dict = {
-        "179":  {"class_id": 7, "height": 290, "center": [ 179,  35]},
+        "179":  {"class_id": 7, "height": 290, "center": [ 1,  333]},
         "-143": {"class_id": 3, "height": 288, "center": [-143, -35]},
         "149":  {"class_id": 3, "height": 191, "center": [ 149,  36]},
-        "-113": {"class_id": 2, "height": 300, "center": [ 640, -35]},
+        "-113": {"class_id": 2, "height": 300, "center": [ 91, -35]},
     }
 
     result = select_tracking_armor(armors_dict, 0)
