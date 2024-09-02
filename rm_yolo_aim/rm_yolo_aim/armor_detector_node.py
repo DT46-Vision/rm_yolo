@@ -29,6 +29,7 @@ class ArmorDetectorNode(Node):
 
         # 发布处理后的图像
         result_img_msg = self.cv_bridge.cv2_to_imgmsg(img, 'bgr8')
+        result_img_msg.header.frame_id = "camera_optical_frame"
         self.publisher_img.publish(result_img_msg)
         # self.get_logger().info('Published processed image to /detector/result_img')
 

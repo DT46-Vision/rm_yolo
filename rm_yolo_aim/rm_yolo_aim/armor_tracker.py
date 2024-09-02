@@ -40,8 +40,7 @@ def pixel_to_angle_and_deep(tracking_armor, vfov, pic_width):
     try:
         height = tracking_armor["height"]
         center = tracking_armor["center"]
-        logger.info(f"height: {height}, center: {center}")
-
+        
         # 估计距离
         deep = height
 
@@ -59,8 +58,6 @@ def pixel_to_angle_and_deep(tracking_armor, vfov, pic_width):
         # 计算角度
         yaw   = math.atan(center[0] / focal_pixel_distance) * RAD2DEG
         pitch = math.atan(center[1] / focal_pixel_distance) * RAD2DEG
-
-        logger.info(f"这里的计算 {yaw, pitch, deep}")
 
         return yaw, pitch, deep
 
