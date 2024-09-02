@@ -4,6 +4,7 @@ import rclpy                            # ROS2 Python接口库
 from rclpy.node import Node             # ROS2 节点类
 from std_msgs.msg import String, Header # 字符串消息类型和头部消息类型
 
+from sensor_msgs.msg import Image       # 图像消息类型
 from rm_interfaces.msg import ArmorsMsg, ArmorTracking  # 导入自定义消息类型
 from rm_yolo_aim.armor_tracker import select_tracking_armor, pixel_to_angle_and_deep
 
@@ -14,6 +15,9 @@ class ArmorTrackerNode(Node):
         self.sub_armors = self.create_subscription(
             ArmorsMsg, '/detector/armors_info', self.listener_callback_armors, 10)  # 订阅装甲板信息
         
+        self.sub_cam    = self.create_subscription(
+            Image, 'image_raw', self.listener_callback_cam, 10)
+
         self.sub_serial = self.create_subscription(
             String, '/uart/receive', self.listener_callback_serial, 10)  # 订阅串口数据
         
@@ -21,6 +25,11 @@ class ArmorTrackerNode(Node):
         
         self.tracking_color = None
         self.tracking_armor = None
+        self.pic_width = 666
+
+    def listener_callback_cam(self, data):
+        if self.pic_width != data.width:
+            self.pic_width = data.width
 
     def listener_callback_armors(self, msg):
         try:
@@ -32,7 +41,7 @@ class ArmorTrackerNode(Node):
             self.tracking_armor = select_tracking_armor(armors_dict, 0)  # 0表示红色
             self.get_logger().info(f"get tracking_armor {self.tracking_armor}")
 
-            yaw, pitch, deep = pixel_to_angle_and_deep(self.tracking_armor, 72) 
+            yaw, pitch, deep = pixel_to_angle_and_deep(self.tracking_armor, 72, self.pic_width) 
 
             self.get_logger().info(f"yaw, pitch, deep: {yaw, pitch, deep}")
             
