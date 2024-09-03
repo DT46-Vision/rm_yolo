@@ -39,7 +39,7 @@ class ArmorTrackerNode(Node):
 
             # 选择要跟踪的装甲板
             self.tracking_armor = select_tracking_armor(armors_dict, 0)  # 0表示红色
-            self.get_logger().info(f"get tracking_armor {self.tracking_armor}")
+            self.get_logger().info(f"得到需要 追踪 的装甲板 {self.tracking_armor}")
 
             yaw, pitch, deep = pixel_to_angle_and_deep(self.tracking_armor, 72, self.pic_width) 
 
