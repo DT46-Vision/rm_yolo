@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sudo systemctl stop yolo.service
+
 export ROS_HOSTNAME=$(hostname)
 export ROS_HOME=${ROS_HOME:=$HOME_DIR/.ros}
 export ROS_LOG_DIR="/tmp"
