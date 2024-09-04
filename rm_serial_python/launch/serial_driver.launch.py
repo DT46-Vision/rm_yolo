@@ -10,8 +10,8 @@ def generate_launch_description():
         get_package_share_directory('rm_serial_driver'), 'config', 'serial_driver.yaml')
 
     rm_serial_driver_node = Node(
-        package='rm_serial_driver',
-        executable='rm_serial_driver_node',
+        package='rm_serial_python',
+        executable='rm_serial_node',
         namespace='',
         output='screen',
         emulate_tty=True,

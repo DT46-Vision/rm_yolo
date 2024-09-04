@@ -59,6 +59,9 @@ class RMSerialDriver(Node):
     def receive_data(self):
         """接收串口数据并处理"""
         while rclpy.ok():
+
+            time.sleep(1) # 1秒接受一次串口数据
+            
             try:         
                 serial_receive_msg = SerialReceive()  # 创建并设置消息
                 serial_receive_msg.header = Header()  # 创建并设置Header
@@ -95,6 +98,7 @@ class RMSerialDriver(Node):
     def send_data(self, msg):
         """处理目标信息并通过串口发送"""
         try:
+            # 目标ID对应的装甲板, 暂时不用
             id_map =   ["B1", "B2", "B3", "B4", "B5", "B7", 
                         "R1", "R2", "R3", "R4", "R5", "R7"]
             
