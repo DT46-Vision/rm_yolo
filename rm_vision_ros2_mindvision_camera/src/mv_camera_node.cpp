@@ -114,6 +114,7 @@ public:
             CameraFlipFrameBuffer(image_msg_.data.data(), &s_frame_info_, 3);
           }
           camera_info_msg_.header.stamp = image_msg_.header.stamp = this->now();
+          camera_info_msg_.header.frame_id = "camera_optical_frame";
           image_msg_.height = s_frame_info_.iHeight;
           image_msg_.width = s_frame_info_.iWidth;
           image_msg_.step = s_frame_info_.iWidth * 3;

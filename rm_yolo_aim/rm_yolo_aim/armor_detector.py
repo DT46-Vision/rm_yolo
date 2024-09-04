@@ -1,9 +1,8 @@
-from networkx import center
 from ultralytics import YOLO
 import cv2
 import os
+import numpy as np
 from loguru import logger
-import serial
 
 
 class ArmorDetector:
@@ -20,16 +19,44 @@ class ArmorDetector:
         height = y2 - y1
         perimeter = int(2 * (width + height))
 
-        return perimeter
+        return perimeter    
+    def calculate_height(self, bbox):
+
+        x1, y1, x2, y2 = bbox[0]
+        height = int(y2 - y1)
+
+        return height
 
     def calculate_center(self, bbox, img):
         x1, y1, x2, y2 = bbox[0]
         height, width = img.shape[:2]
 
         center_x = int((x1 + x2) / 2 - (width / 2))
-        center_y = int((y1 + y2) / 2 - (height / 2))
+        center_y = -int((y1 + y2) / 2 - (height / 2)) # 图片的y轴和准星的y轴是反的
 
         return center_x, center_y
+    
+    def undistort_image(self, cv_image, camera_info):
+        if camera_info is None:
+            self.get_logger().warn('Camera info not received yet.')
+            return None
+        
+        # 获取相机内参和畸变系数
+        K = np.array(camera_info.k).reshape(3, 3)
+        D = np.array(camera_info.d)
+        height, width = camera_info.height, camera_info.width
+
+        # 计算新的相机矩阵和ROI
+        new_camera_matrix, roi = cv2.getOptimalNewCameraMatrix(K, D, (width, height), 1, (width, height))
+
+        # 矫正图像
+        undistorted_image = cv2.undistort(cv_image, K, D, None, new_camera_matrix)
+
+        # 裁剪图像
+        x, y, w, h = roi
+        undistorted_image = undistorted_image[y:y+h, x:x+w]
+
+        return undistorted_image
 
     def detect_armor(self, img):
         results = self.model(img)
@@ -40,17 +67,17 @@ class ArmorDetector:
         for result in results:
             for box in result.boxes:
                 class_id = int(box.cls)  # 获取类别ID
-                confidence = float(box.conf)  # 获取置信度
+                # confidence = float(box.conf)  # 获取置信度
                 boxx = box.xyxy.tolist()  # 获取边界框坐标
 
-                size = self.calculate_perimeter(boxx)
+                height = self.calculate_height(boxx)
                 center_x, center_y = self.calculate_center(boxx, img)
 
                 armors[str(center_x)] = {
                     "class_id": class_id,
                     # "confidence": confidence, # 置信度
                     # "bbox": boxx, # 边界框坐标
-                    "size": size,
+                    "height": height,
                     "center": [center_x, center_y],
                 }
 
@@ -103,6 +130,7 @@ if __name__ == "__main__":
     detector = ArmorDetector(ov_model_path)
 
     # detector = ArmorDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best.pt')
+    detector.logger.info("开始预测")
     detector.start_detection()
 
     {

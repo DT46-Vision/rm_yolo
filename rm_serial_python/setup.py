@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'rm_yolo_aim'
+package_name = 'rm_serial_python'
 
 setup(
     name=package_name,
@@ -13,15 +13,14 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='dbink',
+    maintainer='morefine',
     maintainer_email='dbinkv1@Gmail.com',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'armor_detector_node = rm_yolo_aim.armor_detector_node:main',
-            'armor_tracker_node = rm_yolo_aim.armor_tracker_node:main',
+            'rm_serial_node = rm_serial_python.rm_serial_node:main',
         ],
     },
 )
