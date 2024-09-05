@@ -37,7 +37,8 @@ class ArmorDetectorNode(Node):
     def listener_callback(self, data):
         cv_image = self.cv_bridge.imgmsg_to_cv2(data, 'bgr8')    # 将ROS的图像消息转化成OpenCV图像
 
-        if self.camera_info != None:
+
+        if len(self.camera_info.d) != 0:
             cv_image = detector.undistort_image(cv_image, self.camera_info)  # 畸变校正
             self.get_logger().info('畸变校正了图像')
 

@@ -8,8 +8,6 @@ export ROS_LOG_DIR="/tmp"
 
 source /opt/ros/humble/setup.bash
 
-ros2 node killall
-
 pkill start.sh # 杀掉启动文件
 pkill -f ros   # 杀掉所有ROS2进程
 ros2 daemon stop
