@@ -23,9 +23,9 @@ class ArmorTrackerNode(Node):
         
         self.pub_tracker = self.create_publisher(ArmorTracking, '/tracker/target', 10)
         
-        self.tracking_color = None
+        self.tracking_color = 0    # 0表示红色, 1表示蓝色, 现初始化为红色
         self.tracking_armor = None
-        self.pic_width = 666
+        self.pic_width = 666       # 随便初始化一个图像宽度
 
     def listener_callback_cam(self, data):
         if self.pic_width != data.width:
@@ -38,7 +38,8 @@ class ArmorTrackerNode(Node):
             # self.get_logger().info(f'Received armors data: {armors_dict}')
 
             # 选择要跟踪的装甲板
-            self.tracking_armor = select_tracking_armor(armors_dict, 0)  # 0表示红色
+            # self.tracking_armor = select_tracking_armor(armors_dict, 0)  # 0表示红色
+            self.tracking_armor = select_tracking_armor(armors_dict, self.tracking_color)  # 0表示红色
             self.get_logger().info(f"得到需要 追踪 的装甲板 {self.tracking_armor}")
 
             yaw, pitch, deep = pixel_to_angle_and_deep(self.tracking_armor, 72, self.pic_width) 
@@ -75,6 +76,8 @@ class ArmorTrackerNode(Node):
         self.get_logger().info(f'Received serial data: {serial_data}')
 
         # 这里可以对串口数据进行进一步处理
+        if self.tracking_color != msg.tracking_color:
+            self.tracking_color = msg.tracking_color
 
 def main(args=None):                              # ROS2节点主入口main函数
     rclpy.init(args=args)                         # ROS2 Python接口初始化

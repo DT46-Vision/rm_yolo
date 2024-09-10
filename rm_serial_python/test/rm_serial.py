@@ -1,33 +1,27 @@
-import serial
 import struct
-import time
+import zlib
 
-class SerialPacketSender:
-    def __init__(self, port, baudrate, header=0xA5, tracking=True, yaw=45.0, v_yaw=1.5, pitch=30.0, deep=100.0):
-        self.ser = serial.Serial(port, baudrate)
-        self.packet_format = '<B?ffffH'  # 使用小端字节序
-        self.header = header
-        self.tracking = tracking
-        self.yaw = yaw
-        self.v_yaw = v_yaw
-        self.pitch = pitch
-        self.deep = deep
+# 打包数据
+packet = struct.pack(
+    "<Bfff",
+    0x5A,
+    12.4,
+    56.1,
+    100.0,
+)
 
-    def create_packet(self):
-        checksum = self.header + (1 if self.tracking else 0) + int(self.yaw) + int(self.v_yaw) + int(self.pitch) + int(self.deep)
-        # 打包数据
-        return struct.pack(self.packet_format, self.header, self.tracking, self.yaw, self.v_yaw, self.pitch, self.deep, checksum)
+# 计算校验和
+checksum = zlib.crc32(packet) & 0xFFFF  # 取低16位作为校验和
 
-    def send_packet(self):
-        packet = self.create_packet()
-        self.ser.write(packet)
-        time.sleep(1)  # 等待一段时间以确保数据发送完成
+# 将校验和添加到数据包中
+packet_with_checksum = packet + struct.pack("<H", checksum)
 
-    def close(self):
-        self.ser.close()
+# 打印最终数据包
+print(packet_with_checksum)
 
-# 使用示例
-if __name__ == "__main__":
-    sender = SerialPacketSender('COM3', 9600, header=0xA5, tracking=True, yaw=45.0, v_yaw=1.5, pitch=30.0, deep=100.0)
-    sender.send_packet()
-    sender.close()
+# 解包数据
+unpacked_data = struct.unpack("<BfffH", packet_with_checksum)
+print(unpacked_data)
+
+# 打印校验和
+print("Checksum:", checksum)

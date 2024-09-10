@@ -59,6 +59,9 @@ class RMSerialDriver(Node):
     def receive_data(self):
         """接收串口数据并处理"""
         while rclpy.ok():
+
+            time.sleep(1) # 1秒接受一次串口数据
+            
             try:         
                 serial_receive_msg = SerialReceive()  # 创建并设置消息
                 serial_receive_msg.header = Header()  # 创建并设置Header
@@ -73,6 +76,10 @@ class RMSerialDriver(Node):
                     if len(data) == 16:
                         packet = struct.unpack("<B?fffH", header + data)  # 注意这里的格式字符串
 
+                        self.get_logger().info(f"解包收到的数据: {packet}")
+                        
+                        serial_receive_msg.data = packet  # 给ros消息装入数据
+
                         # 更新目标颜色参数
                         if packet[1] != self.tracking_color:
                             self.tracking_color = packet[1]
@@ -86,7 +93,6 @@ class RMSerialDriver(Node):
                 else:
                     self.get_logger().warn("Invalid header received, 没有数据")
 
-                
 
             except serial.SerialException as e:
                 self.get_logger().error(f"接收数据时出错: {str(e)}")
@@ -95,6 +101,7 @@ class RMSerialDriver(Node):
     def send_data(self, msg):
         """处理目标信息并通过串口发送"""
         try:
+            # 目标ID对应的装甲板, 暂时不用
             id_map =   ["B1", "B2", "B3", "B4", "B5", "B7", 
                         "R1", "R2", "R3", "R4", "R5", "R7"]
             

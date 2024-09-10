@@ -6,7 +6,6 @@ from sensor_msgs.msg import CameraInfo
 from std_msgs.msg import Header         # 头部消息类型
 from cv_bridge import CvBridge          # ROS与OpenCV图像转换类
 import cv2                              # OpenCV图像处理库
-import numpy as np                      # Python数值计算库
 import json                             # JSON序列化库
 
 from rm_yolo_aim.armor_detector import ArmorDetector
@@ -37,7 +36,8 @@ class ArmorDetectorNode(Node):
     def listener_callback(self, data):
         cv_image = self.cv_bridge.imgmsg_to_cv2(data, 'bgr8')    # 将ROS的图像消息转化成OpenCV图像
 
-        if self.camera_info != None:
+
+        if len(self.camera_info.d) != 0:
             cv_image = detector.undistort_image(cv_image, self.camera_info)  # 畸变校正
             self.get_logger().info('畸变校正了图像')
 
