@@ -4,11 +4,16 @@ import os
 import numpy as np
 from loguru import logger
 
+USER = os.environ['USER']
 
 class ArmorDetector:
-    def __init__(self, model_path, serial_port="/dev/ttyUSB0", baud_rate=115200):
+    def __init__(self):
+        model_path = (
+        f"/home/{USER}/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best_openvino_model/"
+    )
         self.logger = logger
         self.model = YOLO(model_path)  # 加载模型
+        
         # self.logger.info(f'加载模型 {self.model}')
         # self.com = serial.Serial(serial_port, baud_rate)
 
@@ -45,6 +50,7 @@ class ArmorDetector:
         K = np.array(camera_info.k).reshape(3, 3)
         D = np.array(camera_info.d)
         height, width = camera_info.height, camera_info.width
+        logger.info(f"高:{height}, 宽:{width}")
 
         # 计算新的相机矩阵和ROI
         new_camera_matrix, roi = cv2.getOptimalNewCameraMatrix(K, D, (width, height), 1, (width, height))
@@ -111,7 +117,7 @@ class ArmorDetector:
 
                     logger.info(f"预测结果：\n{max_center}")
 
-                    if not os.isatty(0):
+                    if 'DISPLAY' in os.environ:  # 判断是否为图形界面环境
                         cv2.namedWindow("frame", cv2.WINDOW_NORMAL)
                         cv2.imshow("frame", PD_frame)
                         if cv2.waitKey(1) & 0xFF == ord("q"):
@@ -123,13 +129,8 @@ class ArmorDetector:
 
 
 if __name__ == "__main__":
-    # OpenVINO模型路径
-    ov_model_path = (
-        "/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best_openvino_model/"
-    )
-    detector = ArmorDetector(ov_model_path)
 
-    # detector = ArmorDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best.pt')
+    detector = ArmorDetector()
     detector.logger.info("开始预测")
     detector.start_detection()
 

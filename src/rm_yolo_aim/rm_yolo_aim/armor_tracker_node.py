@@ -23,7 +23,7 @@ class ArmorTrackerNode(Node):
         
         self.pub_tracker = self.create_publisher(ArmorTracking, '/tracker/target', 10)
         
-        self.tracking_color = 0    # 0表示红色, 1表示蓝色, 现初始化为红色
+        self.tracking_color = 1    # 0蓝色表示, 1表示红色, 现初始化为红色
         self.tracking_armor = None
         self.pic_width = 666       # 随便初始化一个图像宽度
 

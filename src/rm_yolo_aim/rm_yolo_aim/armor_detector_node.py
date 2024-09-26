@@ -7,12 +7,18 @@ from std_msgs.msg import Header         # 头部消息类型
 from cv_bridge import CvBridge          # ROS与OpenCV图像转换类
 import cv2                              # OpenCV图像处理库
 import json                             # JSON序列化库
+import os
 
 from rm_yolo_aim.armor_detector import ArmorDetector
 from rm_interfaces.msg import ArmorsMsg  # 导入自定义消息类型
 
+USER = os.environ['USER']
+
 # detector = ArmorDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best.pt')             # pt 原始模型
-detector = ArmorDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best_openvino_model/')  # openvino 模型
+detector = ArmorDetector()  # openvino 模型
+detector.model_path = (
+        f"/home/{USER}/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best_openvino_model/"
+    )
 
 class ArmorDetectorNode(Node):
     def __init__(self, name):
@@ -36,10 +42,15 @@ class ArmorDetectorNode(Node):
     def listener_callback(self, data):
         cv_image = self.cv_bridge.imgmsg_to_cv2(data, 'bgr8')    # 将ROS的图像消息转化成OpenCV图像
 
+        try:
+            tmp = len(self.camera_info.d)
+            if tmp != 0:
+                cv_image = detector.undistort_image(cv_image, self.camera_info)  # 畸变校正
+                self.get_logger().info('畸变校正了图像')
 
-        if len(self.camera_info.d) != 0:
-            cv_image = detector.undistort_image(cv_image, self.camera_info)  # 畸变校正
-            self.get_logger().info('畸变校正了图像')
+        except AttributeError as e:
+            self.get_logger().info(e)
+        
 
         img, armors_dict = detector.detect_armor(cv_image)       # 检测图像，返回处理后的图像和装甲板信息字典
 
