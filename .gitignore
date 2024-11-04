@@ -4,6 +4,7 @@ __pycache__/
 devel/
 logs/
 build/
+install/
 bin/
 lib/
 msg_gen/
