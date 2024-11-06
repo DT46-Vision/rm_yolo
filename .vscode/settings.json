@@ -16,5 +16,24 @@
             "command": "extension.execute",
             "priority": 4
         }
+    ],
+    "ros.distro": "humble",
+    "python.autoComplete.extraPaths": [
+        "/home/rihoko/ros_ws/build/rm_yolo_aim",
+        "/home/rihoko/ros_ws/install/rm_yolo_aim/lib/python3.10/site-packages",
+        "/home/rihoko/ros_ws/build/rm_serial_python",
+        "/home/rihoko/ros_ws/install/rm_serial_python/lib/python3.10/site-packages",
+        "/home/rihoko/ros_ws/install/rm_interfaces/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/rihoko/ros_ws/build/rm_yolo_aim",
+        "/home/rihoko/ros_ws/install/rm_yolo_aim/lib/python3.10/site-packages",
+        "/home/rihoko/ros_ws/build/rm_serial_python",
+        "/home/rihoko/ros_ws/install/rm_serial_python/lib/python3.10/site-packages",
+        "/home/rihoko/ros_ws/install/rm_interfaces/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
     ]
 }
