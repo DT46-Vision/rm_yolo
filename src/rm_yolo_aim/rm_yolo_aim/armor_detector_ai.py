@@ -107,7 +107,7 @@ class ArmorDetector:
         self.logger.info("开始预测")
 
         cap = cv2.VideoCapture(camera_index[0])
-        # cap = cv2.VideoCapture("/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/test.mp4")
+        #cap = cv2.VideoCapture("/home/{USER}/ros_ws/src/rm_yolo_aim/rm_yolo_aim/test.mp4")
 
         if cap is not None:
             while True:
