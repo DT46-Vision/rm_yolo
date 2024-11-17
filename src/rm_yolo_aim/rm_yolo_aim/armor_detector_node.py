@@ -5,11 +5,13 @@ from sensor_msgs.msg import Image       # 图像消息类型
 from sensor_msgs.msg import CameraInfo
 from std_msgs.msg import Header         # 头部消息类型
 from cv_bridge import CvBridge          # ROS与OpenCV图像转换类
+from rcl_interfaces.msg import SetParametersResult  # 导入 SetParametersResult 消息类型
 
 import json                             # JSON序列化库
 
 from rm_yolo_aim.armor_detector_opencv import ArmorDetector
 from rm_interfaces.msg import ArmorsMsg  # 导入自定义消息类型
+
 # 模式参数字典
 detect_mode =  2  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
 # 图像参数字典
@@ -59,6 +61,21 @@ class ArmorDetectorNode(Node):
 
         self.camera_info = None
 
+        # 声明 binary_val 参数并添加回调
+        self.declare_parameter('binary_val', detector.binary_val)  # 声明参数
+        self.add_on_set_parameters_callback(self.param_callback)  # 添加参数回调
+        self.declare_parameter('detect_mode', detector.color)  # 声明参数
+        self.add_on_set_parameters_callback(self.param_callback)  # 添加参数回调
+        
+    def param_callback(self, params):  # 参数回调函数
+        for param in params:
+            if param.name == 'binary_val':  # 检查参数名称
+                detector.binary_val = param.value  # 更新 binary_val
+                self.get_logger().info(f'更新 binary_val: {binary_val}')  # 打印更新信息
+            elif param.name == 'detect_mode': 
+                detector.color = detect_mode
+        return SetParametersResult(successful=True)  # 返回成功结果
+
     def listener_callback_camera_info(self, data):
         if self.camera_info != data:
             self.camera_info = data
@@ -66,15 +83,14 @@ class ArmorDetectorNode(Node):
     def listener_callback(self, data):
         cv_image = self.cv_bridge.imgmsg_to_cv2(data, 'bgr8')    # 将ROS的图像消息转化成OpenCV图像
 
-        try:
-            tmp = len(self.camera_info.d)
-            if tmp != 0:
-                cv_image = detector.undistort_image(cv_image, self.camera_info)  # 畸变校正
-                self.get_logger().info('畸变校正了图像')
+        # try:
+        #     tmp = len(self.camera_info.d)
+        #     if tmp != 0:
+        #         cv_image = detector.undistort_image(cv_image, self.camera_info)  # 畸变校正
+        #         self.get_logger().info('畸变校正了图像')
 
-        except AttributeError as e:
-            self.get_logger().info(e)
-        
+        # except AttributeError as e:
+        #     self.get_logger().info(e)
 
         img, armors_dict = detector.detect_armor(cv_image)       # 检测图像，返回处理后的图像和装甲板信息字典
 
