@@ -196,7 +196,7 @@ class ArmorDetector:  # 定义检测器类
         self.find_lights(frame_darken, frame_binary)  # 查找灯条
         self.find_armor()  # 查找装甲板
         self.draw = self.draw_img()    #print(self.armors_dict)  # 打印装甲板信息字典
-        return self.draw, self.armors_dict
+        return self.draw, self.img_binary, self.armors_dict
         
 if __name__ == "__main__":  # 主程序入口
     # 模式参数字典

@@ -54,6 +54,7 @@ class ArmorDetectorNode(Node):
             CameraInfo, '/camera_info', self.listener_callback_camera_info, 10)
         
         self.publisher_undistorted_img = self.create_publisher(Image, '/detector/undistorted_img', 10)
+        self.publisher_binary_img  = self.create_publisher(Image, '/detector/binary_img', 10)  # 创建图像发布者
         self.publisher_img  = self.create_publisher(Image, '/detector/armors_img', 10)  # 创建图像发布者
         self.publisher_armors = self.create_publisher(ArmorsMsg, '/detector/armors_info', 10)  # 创建串口信息发布者
         self.cv_bridge = CvBridge()                           # 创建图像转换对象
@@ -92,22 +93,31 @@ class ArmorDetectorNode(Node):
     def listener_callback(self, data):
         cv_image = self.cv_bridge.imgmsg_to_cv2(data, 'bgr8')    # 将ROS的图像消息转化成OpenCV图像
 
-        # try:
-        #     tmp = len(self.camera_info.d)
-        #     if tmp != 0:
-        #         cv_image = detector.undistort_image(cv_image, self.camera_info)  # 畸变校正
-        #         self.get_logger().info('畸变校正了图像')
+        if self.camera_info is not None:
+            if self.camera_info.d is not None:
+                tmp = len(self.camera_info.d)
+                if tmp != 0:
+                    cv_image = detector.undistort_image(cv_image, self.camera_info)
+                    print("Undistorting image...")
+                # self.get_logger().info('畸变校正了图像')
+                else:
+                    print("e")
+            else:
+                print("camera_info.d is None.")
+        else:
+            print("camera_info is None.")
 
-        # except AttributeError as e:
-        #     self.get_logger().info(e)
-
-        img, armors_dict = detector.detect_armor(cv_image)       # 检测图像，返回处理后的图像和装甲板信息字典
+        img, img_binary, armors_dict = detector.detect_armor(cv_image)       # 检测图像，返回处理后的图像和装甲板信息字典
 
         # 发布处理后的图像
         undistorted_img_msg = self.cv_bridge.cv2_to_imgmsg(cv_image, 'bgr8')
         undistorted_img_msg.header.frame_id = "undistorted_img_frame"
         self.publisher_undistorted_img.publish(undistorted_img_msg)
-
+        
+        binary_img_msg = self.cv_bridge.cv2_to_imgmsg(img_binary, 'mono8')
+        binary_img_msg.header.frame_id = "binary_img_frame"
+        self.publisher_binary_img.publish(binary_img_msg)
+        
         result_img_msg = self.cv_bridge.cv2_to_imgmsg(img, 'bgr8')
         result_img_msg.header.frame_id = "camera_optical_frame"
         self.publisher_img.publish(result_img_msg)
