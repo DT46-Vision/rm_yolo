@@ -188,15 +188,9 @@ class ArmorDetector:  # 定义检测器类
         x, y, w, h = roi
         undistorted_image = undistorted_image[y:y+h, x:x+w]
         return undistorted_image
-
-
-    def display(self):  # 显示图像的函数
-        cv2.namedWindow("Binary",cv2.WINDOW_NORMAL)       
-        cv2.imshow("Binary", self.img_binary)  # 显示二值化图像
-        drawn = self.draw_img()
-        cv2.namedWindow("Detected",cv2.WINDOW_NORMAL)
-        cv2.imshow("Detected", drawn)      # cv2.namedWindow("raw",cv2.WINDOW_NORMAL) # cv2.imshow("raw", self.img)       
-        
+    
+    def gray_img(self):
+        return self.img_binary
     def detect_armor(self, frame):  # 检测函数
         frame_darken, frame_binary = self.process(frame)  # 处理图像
         self.find_lights(frame_darken, frame_binary)  # 查找灯条
