@@ -20,8 +20,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'armor_detector_node = rm_yolo_aim.armor_detector_node:main',
             'armor_tracker_node = rm_yolo_aim.armor_tracker_node:main',
+            'armor_detector_opencv_node = rm_yolo_aim.armor_detector_opencv_node:main',
+            'armor_detector_ai_node = rm_yolo_aim.armor_detector_ai_node:main',
         ],
     },
 )

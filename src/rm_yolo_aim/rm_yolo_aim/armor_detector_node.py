@@ -91,15 +91,14 @@ class ArmorDetectorNode(Node):
 
     def listener_callback(self, data):
         cv_image = self.cv_bridge.imgmsg_to_cv2(data, 'bgr8')    # 将ROS的图像消息转化成OpenCV图像
-
-        # try:
-        #     tmp = len(self.camera_info.d)
-        #     if tmp != 0:
-        #         cv_image = detector.undistort_image(cv_image, self.camera_info)  # 畸变校正
-        #         self.get_logger().info('畸变校正了图像')
-
-        # except AttributeError as e:
-        #     self.get_logger().info(e)
+        if self.camera_info is None:
+            self.get_logger().info('未接收到相机参数')
+            self.get_logger().info("e")
+        else:
+            tmp = len(self.camera_info.d)
+            if tmp != 0:
+                cv_image = detector.undistort_image(cv_image, self.camera_info)  # 畸变校正
+                self.get_logger().info('畸变校正了图像')
 
         img, armors_dict = detector.detect_armor(cv_image)       # 检测图像，返回处理后的图像和装甲板信息字典
 
