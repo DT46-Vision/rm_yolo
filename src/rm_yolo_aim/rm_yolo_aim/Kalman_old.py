@@ -14,34 +14,35 @@ class KalmanFilter(object):
         self.last_prediction = np.zeros((2, 1), np.float32)
         self.error_frame = 0
 
-    def track(self, x, y):
-        # 更新上一次预测和测量
-        self.last_prediction = self.current_prediction 
-        self.last_measurement = self.current_measurement 
+    def track(self,x,y):
+        self.last_prediction = self.current_prediction # 把当前预测存储为上一次预测
+        self.last_measurement = self.current_measurement # 把当前测量存储为上一次测量
 
-        # 检测异常值
         if abs(self.last_measurement[0] - x) > 64 or abs(self.last_measurement[1] - y) > 48: 
-            self.error_frame += 1 # 增加错误帧计数
-        if x == 0 and y == 0: 
-            self.error_frame += 1 # 处理测量为零的情况
+                self.error_frame = self.error_frame + 1
+        else :
+                pass
 
-        # 判断是否使用上一次预测
-        if self.error_frame < 5:
-            # 如果不是异常值，使用当前测量
-            self.current_measurement = np.array([[np.float32(x)], [np.float32(y)]])
-            self.error_frame = 0 # 重置错误帧计数
-        else:
-            # 如果是异常值，使用上一次预测
+        if x ==0 and y == 0 : 
+                self.error_frame = self.error_frame + 1
+        else :
+                pass
+
+        if self.error_frame < 5 and self.error_frame > 0  :
             self.current_measurement = np.array([[np.float32(self.last_prediction[0])], [np.float32(self.last_prediction[1])]])
 
-        print("error:", self.error_frame) # 输出错误帧计数
-        self.kalman.correct(self.current_measurement) # 用当前测量来校正卡尔曼滤波器
-        self.current_prediction = self.kalman.predict() # 计算卡尔曼预测值
+        else:
+            self.current_measurement = np.array([[np.float32(x)], [np.float32(y)]]) # 当前测量
+            self.error_frame = 0
 
-        # 获取坐标值
+        print("error:",self.error_frame)
+        self.kalman.correct(self.current_measurement) # 用当前测量来校正卡尔曼滤波器
+        self.current_prediction = self.kalman.predict() # 计算卡尔曼预测值，作为当前预测
+
         lmx, lmy = self.last_measurement[0], self.last_measurement[1] # 上一次测量坐标
         cmx, cmy = self.current_measurement[0], self.current_measurement[1] # 当前测量坐标
         lpx, lpy = self.last_prediction[0], self.last_prediction[1] # 上一次预测坐标
         cpx, cpy = self.current_prediction[0], self.current_prediction[1] # 当前预测坐标
 
-        return cpx, cpy # 返回当前预测坐标
+       
+        return cpx,cpy
