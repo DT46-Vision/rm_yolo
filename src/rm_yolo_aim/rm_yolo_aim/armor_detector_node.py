@@ -11,7 +11,7 @@ import cv2                              # OpenCV图像处理库
 import json                             # JSON序列化库
 import os
 
-from rm_yolo_aim.armor_detector_ai import ArmorDetector
+from rm_yolo_aim.armor_detector import ArmorDetector
 from rm_interfaces.msg import ArmorsMsg  # 导入自定义消息类型
 
 USER = os.environ['USER']

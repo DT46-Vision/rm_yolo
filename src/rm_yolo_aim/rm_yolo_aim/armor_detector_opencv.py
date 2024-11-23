@@ -14,13 +14,14 @@ class Armor:  # 定义装甲板类
         self.rect = rect  # 设置装甲板矩形
 
 class ArmorDetector:  # 定义检测器类
-    def __init__(self, detect_mode, binary_val, light_params, armor_params, color_params):  # 初始化检测器
+    def __init__(self, detect_color, display_mode, binary_val, light_params, armor_params, color_params):  # 初始化检测器
         self.img = None
         self.img_binary = None
         self.img_darken = None
         self.img_draw = None
         self.binary_val = binary_val  # 二值化阈值
-        self.color = detect_mode  # 颜色模式
+        self.color = detect_color  # 颜色模式
+        self.display_mode = display_mode # 显示模式
         self.light_params = light_params  # 灯条参数
         self.armor_params = armor_params  # 装甲板参数
         self.armor_color = color_params["armor_color"]  # 装甲板颜色映射
@@ -189,18 +190,28 @@ class ArmorDetector:  # 定义检测器类
         undistorted_image = undistorted_image[y:y+h, x:x+w]
         return undistorted_image
     
-    def gray_img(self):
-        return self.img_binary
+    def display(self):
+        if self.display_mode == "Binary":
+            return self.img_binary, None
+        elif self.display_mode == "All":
+            self.draw = self.draw_img() 
+            return self.img_binary, self.draw
+        elif self.display_mode == "None":
+            return None, None
+        else:
+            print("Invalid display mode")
+            return None, None
+
     def detect_armor(self, frame):  # 检测函数
         frame_darken, frame_binary = self.process(frame)  # 处理图像
         self.find_lights(frame_darken, frame_binary)  # 查找灯条
         self.find_armor()  # 查找装甲板
-        self.draw = self.draw_img()    #print(self.armors_dict)  # 打印装甲板信息字典
-        return self.draw, self.img_binary, self.armors_dict
+        return self.armors_dict
         
 if __name__ == "__main__":  # 主程序入口
     # 模式参数字典
-    detect_mode =  2  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
+    detect_color =  2  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
+    display_mode = "All" # 显示模式 None: 不显示, Binary: 显示二值化图, All: 显示二值化图和结果图像
     # 图像参数字典
     binary_val = 35  
     # 灯条参数字典
@@ -229,9 +240,9 @@ if __name__ == "__main__":  # 主程序入口
         "light_color": {1: (200, 71, 90), 0: (0, 100, 255)},  # 灯条颜色映射
         "light_dot": {1: (0, 0, 255), 0: (255, 0, 0)}  # 灯条中心点颜色映射
     }
-    detector = ArmorDetector(detect_mode, binary_val, light_params, armor_params, color_params)  # 创建检测器对象
-    info = detector.detect_armor(cv2.imread('./photo/red_2.jpg'))  # 读取图像并进行检测
-    logger.info(info) # 打印检测结果
+    detector = ArmorDetector(detect_color, display_mode, binary_val, light_params, armor_params, color_params)  # 创建检测器对象
+    info = detector.detect_armor(cv2.imread('D:\/rm_yolo\src\/rm_yolo_aim\/test\/b.jpg'))  # 读取图像并进行检测
     detector.display()  # 显示图像
+    logger.info(info) # 打印检测结果
     cv2.waitKey(0)  # 等待按键
     cv2.destroyAllWindows()  # 关闭所有窗口

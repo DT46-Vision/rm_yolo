@@ -15,6 +15,7 @@ from rm_interfaces.msg import ArmorsMsg  # 导入自定义消息类型
 
 # 模式参数字典
 detect_color =  2  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
+display_mode = "Binary"
 # 图像参数字典
 binary_val = 45  
 # 灯条参数字典
@@ -74,6 +75,7 @@ class ArmorDetectorNode(Node):
         # 声明 binary_val 和 detect_color 参数并添加回调
         self.declare_parameter('binary_val', detector.binary_val)  # 声明 binary_val 参数
         self.declare_parameter('detect_color', detector.color)  # 声明 detect_color 参数
+        self.declare_parameter('display_mode', detector.display_mode)  # 声明 display_mode 参数        
         self.add_on_set_parameters_callback(self.param_callback)  # 添加参数回调
         self.get_logger().info('Armor Detector Node has started.')
     def param_callback(self, params):  # 参数回调函数
@@ -84,6 +86,9 @@ class ArmorDetectorNode(Node):
             elif param.name == 'detect_color':  # 检查 detect_color 参数
                 detector.color = param.value  # 更新 detect_color
                 self.get_logger().info(f'更新 detect.color: {detector.color}')  # 打印更新信息
+            elif param.name == 'display_mode':  # 检查 display_mode 参数
+                detector.display_mode = param.value  # 更新 display_mode
+                self.get_logger().info(f'更新 display_mode: {detector.display_mode}')  # 打印更新信息
             elif param.name in light_params:  # 检查灯条参数
                 detector.light_params[param.name] = param.value  # 更新灯条参数
                 self.get_logger().info(f'更新灯条参数 {param.name}: {light_params[param.name]}')  # 打印更新信息
@@ -126,20 +131,24 @@ class ArmorDetectorNode(Node):
             except AttributeError as e:
                 self.get_logger().info(e)
                 
-            img, img_binary, armors_dict = detector.detect_armor(cv_image)       # 检测图像，返回处理后的图像和装甲板信息字典
+            armors_dict = detector.detect_armor(cv_image)       # 检测图像，返回处理后的图像和装甲板信息字典
+            img_binary, result_img = detector.display()
 
             # 发布处理后的图像
             undistorted_img_msg = self.cv_bridge.cv2_to_imgmsg(cv_image, 'bgr8')
             undistorted_img_msg.header.frame_id = "undistorted_img_frame"
             self.publisher_undistorted_img.publish(undistorted_img_msg)
             
-            binary_img_msg = self.cv_bridge.cv2_to_imgmsg(img_binary, 'mono8')
-            binary_img_msg.header.frame_id = "binary_img_frame"
-            self.publisher_binary_img.publish(binary_img_msg)
+            if img_binary is not None:
+                binary_img_msg = self.cv_bridge.cv2_to_imgmsg(img_binary, 'mono8')
+                binary_img_msg.header.frame_id = "binary_img_frame"
+                self.publisher_binary_img.publish(binary_img_msg)
+
+            if result_img is not None:
+                result_img_msg = self.cv_bridge.cv2_to_imgmsg(result_img, 'bgr8')
+                result_img_msg.header.frame_id = "camera_optical_frame"
+                self.publisher_img.publish(result_img_msg)
             
-            result_img_msg = self.cv_bridge.cv2_to_imgmsg(img, 'bgr8')
-            result_img_msg.header.frame_id = "camera_optical_frame"
-            self.publisher_img.publish(result_img_msg)
             # self.get_logger().info('Published processed image to /detector/result_img')
 
             # 将装甲板信息字典转换为JSON格式的字符串
