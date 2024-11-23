@@ -45,7 +45,7 @@ color_params = {
     "light_dot": {1: (0, 0, 255), 0: (255, 0, 0)}  # 灯条中心点颜色映射
 }
 
-detector = ArmorDetector(detect_color, binary_val, light_params, armor_params, color_params)  # 创建检测器对象
+detector = ArmorDetector(detect_color, display_mode, binary_val, light_params, armor_params, color_params)  # 创建检测器对象
 
 
 class ArmorDetectorNode(Node):
