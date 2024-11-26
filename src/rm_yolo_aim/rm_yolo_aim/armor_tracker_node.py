@@ -1,4 +1,5 @@
-import json                             # JSON序列化库
+import json
+import time                             # JSON序列化库
 import rclpy                            # ROS2 Python接口库
 from rclpy.node import Node             # ROS2 节点类
 from std_msgs.msg import String, Header # 字符串消息类型和头部消息类型
@@ -8,8 +9,20 @@ from rm_yolo_aim.armor_tracker import select_tracking_armor, pixel_to_angle_and_
 from rm_yolo_aim.Kalman import KalmanFilter
 from loguru import logger
 #kalmanfilter = KalmanFilter()
-dt = 0.1
-kf = KalmanFilter(dt)
+kf = KalmanFilter()
+def time_diff(last_time=[None]):
+    """计算两次调用之间的时间差，单位为纳秒。"""
+    current_time = time.time_ns()  # 获取当前时间（单位：纳秒）
+
+    if last_time[0] is None:  # 如果是第一次调用，更新last_time
+        last_time[0] = current_time
+        return 1  # 防止除零错误，返回1纳秒
+
+    else:  # 计算时间差
+        diff = current_time - last_time[0]  # 计算时间差（单位：纳秒）
+        last_time[0] = current_time  # 更新上次调用时间
+        return diff / 1e9  # 返回时间差（秒）
+    
 class ArmorTrackerNode(Node):
     def __init__(self, name):
         super().__init__(name)  # ROS2节点父类初始化
@@ -36,6 +49,8 @@ class ArmorTrackerNode(Node):
 
     def listener_callback_armors(self, msg):
         try:
+            kf.dt = time_diff()
+            print(f"time_dt: {kf.dt}")
             # 将JSON格式的数据转换回Python字典
             armors_dict = json.loads(msg.data)
             # self.get_logger().info(f'Received armors data: {armors_dict}')

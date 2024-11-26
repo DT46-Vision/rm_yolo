@@ -2,13 +2,14 @@ import numpy as np
 import cv2
 
 class KalmanFilter:
-    def __init__(self, dt):
+    def __init__(self):
+        self.dt = 0.1
         # 初始化卡尔曼滤波器
         self.kf = cv2.KalmanFilter(4, 2)  # 状态维度为4，观测维度为2
         
         # 状态转移矩阵
-        self.kf.transitionMatrix = np.array([[1, 0, dt, 0],
-                                              [0, 1, 0, dt],
+        self.kf.transitionMatrix = np.array([[1, 0, self.dt, 0],
+                                              [0, 1, 0, self.dt],
                                               [0, 0, 1, 0],
                                               [0, 0, 0, 1]], np.float32)
         
