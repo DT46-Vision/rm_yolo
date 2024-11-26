@@ -34,44 +34,21 @@ def select_tracking_armor(armors_dict, color):
     return tracking_armor
 
 #def pixel_to_angle_and_deep(kalmanfilter, tracking_armor, vfov, pic_width):
-def pixel_to_angle_and_deep(kf, tracking_armor, vfov, pic_width):
-    if not tracking_armor:  # 检查 tracking_armor 是否为空
-        logger.info("tracking_armor is empty, returning default values.")
-        predicted_state = kf.get_state()
-        #return [kalmanfilter.current_measurement[0], kalmanfilter.current_measurement[1], kalmanfilter.deep]
-        return [predicted_state[0], predicted_state[1], kf.deep]
-    try:
-        height = tracking_armor["height"]
-        center = tracking_armor["center"]
-        # 估计距离
-        #kalmanfilter.deep = height
-        kf.deep = height
-        # 确保 vfov 是以弧度为单位
-        vfov_radians = vfov * DEG2RAD
+def pixel_to_angle_and_deep(height, center, vfov, pic_width):
 
-        # 相机 x, y 坐标系下投影面的 Z 轴距离(单位: 像素)
-        focal_pixel_distance = (pic_width / 2) / math.tan(vfov_radians / 2)
-
-        # 确保 focal_pixel_distance 不为零
-        if focal_pixel_distance == 0:
-            logger.warning("focal_pixel_distance is zero, returning default angles.")
-            #return [kalmanfilter.current_measurement[0], kalmanfilter.current_measurement[1], kalmanfilter.deep]
-            return [predicted_state[0], predicted_state[1], kf.deep]
-        # 计算角度
-        yaw   = math.atan(center[0] / focal_pixel_distance) * RAD2DEG
-        pitch = math.atan(center[1] / focal_pixel_distance) * RAD2DEG
-        kf.predict()  # 进行预测
-        kf.update(yaw, pitch)  # 更新状态
-        predicted_state = kf.get_state()  # 获取预测的状态
-        print(f"预测的 yaw: {predicted_state[0]:.2f}, pitch: {predicted_state[1]:.2f}")
-        #yaw_predict, pitch_predict = kalmanfilter.track(yaw, pitch)
-        #return yaw_predict, pitch_predict, kalmanfilter.deep
-        return [predicted_state[0], predicted_state[1], kf.deep]
-    except Exception as e:
-        logger.error(f"Error in pixel_to_angle_and_deep: {e}")
-        #return [kalmanfilter.current_measurement[0], kalmanfilter.current_measurement[1], kalmanfilter.deep]
-        return [predicted_state[0], predicted_state[1], kf.deep]
-
+    # 估计距离
+    deep = height
+    # 确保 vfov 是以弧度为单位
+    vfov_radians = vfov * DEG2RAD
+    # 相机 x, y 坐标系下投影面的 Z 轴距离(单位: 像素)
+    focal_pixel_distance = (pic_width / 2) / math.tan(vfov_radians / 2)
+    # 确保 focal_pixel_distance 不为零
+    if focal_pixel_distance == 0:
+        focal_pixel_distance = 0.000_000_1
+    # 计算角度
+    yaw   = math.atan(center[0] / focal_pixel_distance) * RAD2DEG
+    pitch = math.atan(center[1] / focal_pixel_distance) * RAD2DEG
+    return yaw, pitch, deep
 
 if __name__ == "__main__":
 

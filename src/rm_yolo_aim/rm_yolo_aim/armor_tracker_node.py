@@ -6,6 +6,7 @@ from sensor_msgs.msg import Image       # 图像消息类型
 from rm_interfaces.msg import ArmorsMsg, ArmorTracking  # 导入自定义消息类型
 from rm_yolo_aim.armor_tracker import select_tracking_armor, pixel_to_angle_and_deep
 from rm_yolo_aim.Kalman import KalmanFilter
+from loguru import logger
 #kalmanfilter = KalmanFilter()
 dt = 0.1
 kf = KalmanFilter(dt)
@@ -43,17 +44,21 @@ class ArmorTrackerNode(Node):
             # self.tracking_armor = select_tracking_armor(armors_dict, 0)  # 0表示红色
             self.tracking_armor = select_tracking_armor(armors_dict, self.tracking_color)  # 0表示红色
             self.get_logger().info(f"得到需要 追踪 的装甲板 {self.tracking_armor}")
-
-
-
-
-
-            #yaw_predict, pitch_predict, deep = pixel_to_angle_and_deep(kalmanfilter, self.tracking_armor, 72, self.pic_width) 
-            yaw_predict, pitch_predict, deep = pixel_to_angle_and_deep(kf, self.tracking_armor, 72, self.pic_width) 
             
-            
-            
-            #print("yaw,????? pitch:", yaw_predict, pitch_predict)
+            if not self.tracking_armor:  # 检查 tracking_armor 是否为空
+                logger.info("tracking_armor is empty, returning default values.")
+                center_pridict = kf.get_state()
+                height = kf.deep
+            else:
+                cx, cy = self.tracking_armor["center"]
+                height = self.tracking_armor["height"]                
+                kf.predict()  # 进行预测
+                kf.update(cx, cy)  # 更新状态
+                center_pridict = kf.get_state()  # 获取预测的状态
+                print(f"预测的 yaw: {center_pridict[0]:.2f}, pitch: {center_pridict[1]:.2f}")
+            kf.deep = height
+            yaw_predict, pitch_predict, deep = pixel_to_angle_and_deep(height, center_pridict, 72, self.pic_width) 
+
             self.get_logger().info(f"yaw, pitch, deep: {yaw_predict, pitch_predict, deep}")
             
             # 将装甲板信息字典转换为msg消息定义的格式
