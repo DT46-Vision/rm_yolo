@@ -6,8 +6,9 @@ from sensor_msgs.msg import Image       # 图像消息类型
 from rm_interfaces.msg import ArmorsMsg, ArmorTracking  # 导入自定义消息类型
 from rm_yolo_aim.armor_tracker import select_tracking_armor, pixel_to_angle_and_deep
 from rm_yolo_aim.Kalman import KalmanFilter
-
-
+#kalmanfilter = KalmanFilter()
+dt = 0.1
+kf = KalmanFilter(dt)
 class ArmorTrackerNode(Node):
     def __init__(self, name):
         super().__init__(name)  # ROS2节点父类初始化
@@ -26,7 +27,6 @@ class ArmorTrackerNode(Node):
         self.tracking_color = 1    # 0蓝色表示, 1表示红色, 现初始化为红色
         self.tracking_armor = None
         self.pic_width = 666       # 随便初始化一个图像宽度
-        self.kalmanfilter = KalmanFilter()
 
 
     def listener_callback_cam(self, data):
@@ -44,9 +44,16 @@ class ArmorTrackerNode(Node):
             self.tracking_armor = select_tracking_armor(armors_dict, self.tracking_color)  # 0表示红色
             self.get_logger().info(f"得到需要 追踪 的装甲板 {self.tracking_armor}")
 
-            yaw, pitch, deep = pixel_to_angle_and_deep(self.tracking_armor, 72, self.pic_width) 
-            print("yaw,????? pitch:", yaw, pitch)
-            yaw_predict, pitch_predict = self.kalmanfilter.track(yaw, pitch)
+
+
+
+
+            #yaw_predict, pitch_predict, deep = pixel_to_angle_and_deep(kalmanfilter, self.tracking_armor, 72, self.pic_width) 
+            yaw_predict, pitch_predict, deep = pixel_to_angle_and_deep(kf, self.tracking_armor, 72, self.pic_width) 
+            
+            
+            
+            #print("yaw,????? pitch:", yaw_predict, pitch_predict)
             self.get_logger().info(f"yaw, pitch, deep: {yaw_predict, pitch_predict, deep}")
             
             # 将装甲板信息字典转换为msg消息定义的格式

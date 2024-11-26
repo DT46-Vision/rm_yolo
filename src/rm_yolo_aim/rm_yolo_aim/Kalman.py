@@ -1,47 +1,56 @@
-import cv2
 import numpy as np
+import cv2
 
-class KalmanFilter(object):
+class KalmanFilter:
+    def __init__(self, dt):
+        # 初始化卡尔曼滤波器
+        self.kf = cv2.KalmanFilter(4, 2)  # 状态维度为4，观测维度为2
+        
+        # 状态转移矩阵
+        self.kf.transitionMatrix = np.array([[1, 0, dt, 0],
+                                              [0, 1, 0, dt],
+                                              [0, 0, 1, 0],
+                                              [0, 0, 0, 1]], np.float32)
+        
+        # 观测矩阵
+        self.kf.measurementMatrix = np.array([[1, 0, 0, 0],
+                                               [0, 1, 0, 0]], np.float32)
+        
+        # 过程噪声协方差矩阵
+        self.kf.processNoiseCov = np.eye(4, dtype=np.float32) * 0.1
+        
+        # 观测噪声协方差矩阵
+        self.kf.measurementNoiseCov = np.eye(2, dtype=np.float32) * 0.5
+        
+        # 初始状态
+        self.kf.statePost = np.zeros((4, 1), np.float32)
+        self.deep = 0
 
-    def __init__(self):
-        self.kalman = cv2.KalmanFilter(4, 2) # 4：状态数，包括（x，y，dx，dy）坐标及速度（每次移动的距离）；2：观测量，能看到的是坐标值
-        self.kalman.measurementMatrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0]], np.float32) # 系统测量矩阵
-        self.kalman.transitionMatrix = np.array([[1, 0, 1, 0], [0, 1, 0, 1], [0, 0, 1, 0], [0, 0, 0, 1]],      np.float32) # 状态转移矩阵
-        self.kalman.processNoiseCov = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], np.float32)*0.03 # 系统过程噪声协方差
-        self.current_measurement = np.array((2, 1), np.float32)
-        self.last_measurement = np.array((2, 1), np.float32)
-        self.current_prediction = np.zeros((2, 1), np.float32)
-        self.last_prediction = np.zeros((2, 1), np.float32)
-        self.error_frame = 0
+    def predict(self):
+        # 进行预测
+        return self.kf.predict()
 
-    def track(self, x, y):
-        # 更新上一次预测和测量
-        self.last_prediction = self.current_prediction 
-        self.last_measurement = self.current_measurement 
+    def update(self, yaw, pitch):
+        # 更新状态
+        measurement = np.array([[yaw], [pitch]], np.float32)
+        self.kf.correct(measurement)
 
-        # 检测异常值
-        if abs(self.last_measurement[0] - x) > 64 or abs(self.last_measurement[1] - y) > 48: 
-            self.error_frame += 1 # 增加错误帧计数
-        if x == 0 and y == 0: 
-            self.error_frame += 1 # 处理测量为零的情况
+    def get_state(self):
+        # 获取当前状态（yaw, pitch）
+        return self.kf.statePost.flatten()[:2]  # 仅返回yaw和pitch
 
-        # 判断是否使用上一次预测
-        if self.error_frame < 5:
-            # 如果不是异常值，使用当前测量
-            self.current_measurement = np.array([[np.float32(x)], [np.float32(y)]])
-            self.error_frame = 0 # 重置错误帧计数
-        else:
-            # 如果是异常值，使用上一次预测
-            self.current_measurement = np.array([[np.float32(self.last_prediction[0])], [np.float32(self.last_prediction[1])]])
+# 示例用法
+if __name__ == "__main__":
+    dt = 0.1  # 时间步长
+    kf = KalmanFilter(dt)
 
-        print("error:", self.error_frame) # 输出错误帧计数
-        self.kalman.correct(self.current_measurement) # 用当前测量来校正卡尔曼滤波器
-        self.current_prediction = self.kalman.predict() # 计算卡尔曼预测值
+    # 模拟传入的yaw和pitch数据
+    measurements = [(1.0, 0.5),
+                    (1.2, 0.6),
+                    (1.1, 0.55)]
 
-        # 获取坐标值
-        lmx, lmy = self.last_measurement[0], self.last_measurement[1] # 上一次测量坐标
-        cmx, cmy = self.current_measurement[0], self.current_measurement[1] # 当前测量坐标
-        lpx, lpy = self.last_prediction[0], self.last_prediction[1] # 上一次预测坐标
-        cpx, cpy = self.current_prediction[0], self.current_prediction[1] # 当前预测坐标
-
-        return cpx, cpy # 返回当前预测坐标
+    for yaw, pitch in measurements:
+        kf.predict()  # 进行预测
+        kf.update(yaw, pitch)  # 更新状态
+        predicted_state = kf.get_state()  # 获取预测的状态
+    print(f"预测的 yaw: {predicted_state[0]:.2f}, pitch: {predicted_state[1]:.2f}")

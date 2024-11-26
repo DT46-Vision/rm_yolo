@@ -3,4 +3,4 @@
 source /opt/ros/humble/setup.bash
 source ~/ros_ws/install/setup.bash
 
-ros2 launch rm_vision_bringup yolo.launch.py
+ros2 launch rm_vision_bringup opencv.launch.py

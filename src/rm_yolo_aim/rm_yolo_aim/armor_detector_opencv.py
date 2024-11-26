@@ -40,10 +40,10 @@ class ArmorDetector:  # 定义检测器类
     
     def process(self, img):  # 处理图像的函数
         self.img = img
-        self.img_darken = self.darker(cv2.convertScaleAbs(img, alpha=0.5))  # 调整亮度，降低亮度
-        _, self.img_binary = cv2.threshold(cv2.cvtColor(self.img_darken, cv2.COLOR_BGR2GRAY), self.binary_val, 255, cv2.THRESH_BINARY)  # 二值化处理
-        return self.img_darken, self.img_binary
-    
+        #self.img_darken = self.darker(cv2.convertScaleAbs(img, alpha=0.5))  # 调整亮度，降低亮度
+        _, self.img_binary = cv2.threshold(cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY), self.binary_val, 255, cv2.THRESH_BINARY)  # 二值化处理
+        #return self.img_darken, self.img_binary
+        return self.img_binary
     def adjust(self, rect):  # 调整矩形的函数
         c, (w, h), angle = rect  # 解包矩形的中心、宽高和角度
         if w > h:  # 如果宽度大于高度
@@ -191,20 +191,21 @@ class ArmorDetector:  # 定义检测器类
         return undistorted_image
     
     def display(self):
-        if self.display_mode == "Binary":
+        if self.display_mode == "Binary" or self.display_mode == 1:
             return self.img_binary, None
-        elif self.display_mode == "All":
+        elif self.display_mode == "All" or self.display_mode == 2:
             self.draw = self.draw_img() 
             return self.img_binary, self.draw
-        elif self.display_mode == "None":
+        elif self.display_mode == "None" or self.display_mode == 0:
             return None, None
         else:
             print("Invalid display mode")
             return None, None
 
     def detect_armor(self, frame):  # 检测函数
-        frame_darken, frame_binary = self.process(frame)  # 处理图像
-        self.find_lights(frame_darken, frame_binary)  # 查找灯条
+        #frame_darken, frame_binary = self.process(frame)  # 处理图像
+        frame_binary = self.process(frame)  # 处理图像
+        self.find_lights(self.img, frame_binary)  # 查找灯条
         self.find_armor()  # 查找装甲板
         return self.armors_dict
         

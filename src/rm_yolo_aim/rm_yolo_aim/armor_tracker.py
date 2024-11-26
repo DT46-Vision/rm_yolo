@@ -5,6 +5,8 @@ from loguru import logger
 RAD2DEG = 180 / math.pi
 DEG2RAD = math.pi / 180
 
+
+
 def select_tracking_armor(armors_dict, color):
 
     # 筛选垂直方向的长度大于20像素的装甲板
@@ -31,18 +33,19 @@ def select_tracking_armor(armors_dict, color):
 
     return tracking_armor
 
-def pixel_to_angle_and_deep(tracking_armor, vfov, pic_width):
+#def pixel_to_angle_and_deep(kalmanfilter, tracking_armor, vfov, pic_width):
+def pixel_to_angle_and_deep(kf, tracking_armor, vfov, pic_width):
     if not tracking_armor:  # 检查 tracking_armor 是否为空
         logger.info("tracking_armor is empty, returning default values.")
-        return [0, 0, 0]
-
+        predicted_state = kf.get_state()
+        #return [kalmanfilter.current_measurement[0], kalmanfilter.current_measurement[1], kalmanfilter.deep]
+        return [predicted_state[0], predicted_state[1], kf.deep]
     try:
         height = tracking_armor["height"]
         center = tracking_armor["center"]
-        
         # 估计距离
-        deep = height
-
+        #kalmanfilter.deep = height
+        kf.deep = height
         # 确保 vfov 是以弧度为单位
         vfov_radians = vfov * DEG2RAD
 
@@ -52,17 +55,22 @@ def pixel_to_angle_and_deep(tracking_armor, vfov, pic_width):
         # 确保 focal_pixel_distance 不为零
         if focal_pixel_distance == 0:
             logger.warning("focal_pixel_distance is zero, returning default angles.")
-            return [0, 0, deep]
-
+            #return [kalmanfilter.current_measurement[0], kalmanfilter.current_measurement[1], kalmanfilter.deep]
+            return [predicted_state[0], predicted_state[1], kf.deep]
         # 计算角度
         yaw   = math.atan(center[0] / focal_pixel_distance) * RAD2DEG
         pitch = math.atan(center[1] / focal_pixel_distance) * RAD2DEG
-
-        return yaw, pitch, deep
-
+        kf.predict()  # 进行预测
+        kf.update(yaw, pitch)  # 更新状态
+        predicted_state = kf.get_state()  # 获取预测的状态
+        print(f"预测的 yaw: {predicted_state[0]:.2f}, pitch: {predicted_state[1]:.2f}")
+        #yaw_predict, pitch_predict = kalmanfilter.track(yaw, pitch)
+        #return yaw_predict, pitch_predict, kalmanfilter.deep
+        return [predicted_state[0], predicted_state[1], kf.deep]
     except Exception as e:
         logger.error(f"Error in pixel_to_angle_and_deep: {e}")
-        return [0, 0, 0]
+        #return [kalmanfilter.current_measurement[0], kalmanfilter.current_measurement[1], kalmanfilter.deep]
+        return [predicted_state[0], predicted_state[1], kf.deep]
 
 
 if __name__ == "__main__":
