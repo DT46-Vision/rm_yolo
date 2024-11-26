@@ -17,7 +17,6 @@ class ArmorDetector:  # 定义检测器类
     def __init__(self, detect_color, display_mode, binary_val, light_params, armor_params, color_params):  # 初始化检测器
         self.img = None
         self.img_binary = None
-        self.img_darken = None
         self.img_draw = None
         self.binary_val = binary_val  # 二值化阈值
         self.color = detect_color  # 颜色模式
@@ -32,17 +31,9 @@ class ArmorDetector:  # 定义检测器类
         self.armors = []  # 存储装甲板列表
         self.armors_dict = {}  # 存储装甲板信息的字典
         
-    def darker(self, img):  # 暗化图像函数
-        hsv_image = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  # 转换为 HSV 颜色空间
-        hsv_image[:, :, 2] = hsv_image[:, :, 2] * 0.5  # 将 V 通道乘以 0.5，降低亮度
-        darker_image = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)  # 转换回 BGR 颜色空间
-        return darker_image  # 返回暗化后的图像
-    
     def process(self, img):  # 处理图像的函数
         self.img = img
-        #self.img_darken = self.darker(cv2.convertScaleAbs(img, alpha=0.5))  # 调整亮度，降低亮度
         _, self.img_binary = cv2.threshold(cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY), self.binary_val, 255, cv2.THRESH_BINARY)  # 二值化处理
-        #return self.img_darken, self.img_binary
         return self.img_binary
     def adjust(self, rect):  # 调整矩形的函数
         c, (w, h), angle = rect  # 解包矩形的中心、宽高和角度
@@ -133,20 +124,27 @@ class ArmorDetector:  # 定义检测器类
 
     def id_armor(self):  # 为装甲板分配 ID 的函数
         armors_dict = {}
+        img_height, img_width = self.img.shape[:2]
+
         for armor in self.armors:  # 遍历所有装甲板矩形
             center, (width, height), angle = armor.rect  # 获取装甲板矩形的中心、宽高和角度
+
+            center_x = int(center[0] - (img_width / 2))
+            center_y = -int(center[1] - (img_height / 2)) # 图片的y轴和准星的y轴是反的
+
             max_size = max(width, height)  # 计算最大尺寸
             armors_dict[int(center[0])] = {  # 添加装甲板信息到字典
                 "class_id": self.armor_id[armor.color],  # 添加 armor_id
                 "height": int(max_size),  # 添加高度
-                "center": [int(center[0]), int(center[1])]  # 添加中心点
+                "center": [center_x, center_y]  # 添加中心点
             }
         self.armors_dict = armors_dict
-        return self.armors_dict
+        return armors_dict
     
     def find_armor(self):  # 查找装甲板的函数
         self.is_armor(self.lights)  # 查找装甲板
-        self.id_armor()  # 为装甲板分配 ID
+        armors_dict = self.id_armor()  # 为装甲板分配 ID
+        return armors_dict
 
     def draw_lights(self, img):  # 绘制灯条的函数
         for light in self.lights:  # 遍历灯条
@@ -203,11 +201,11 @@ class ArmorDetector:  # 定义检测器类
             return None, None
 
     def detect_armor(self, frame):  # 检测函数
-        #frame_darken, frame_binary = self.process(frame)  # 处理图像
         frame_binary = self.process(frame)  # 处理图像
         self.find_lights(self.img, frame_binary)  # 查找灯条
-        self.find_armor()  # 查找装甲板
-        return self.armors_dict
+        armors_dict = self.find_armor()  # 查找装甲板
+
+        return armors_dict
         
 if __name__ == "__main__":  # 主程序入口
     # 模式参数字典
