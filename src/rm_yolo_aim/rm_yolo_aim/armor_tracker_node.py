@@ -6,9 +6,7 @@ from sensor_msgs.msg import Image       # 图像消息类型
 from rm_interfaces.msg import ArmorsMsg, ArmorTracking  # 导入自定义消息类型
 from rm_yolo_aim.armor_tracker import select_tracking_armor, pixel_to_angle_and_deep
 from rm_yolo_aim.Kalman import KalmanFilter
-global yaw_last, pitch_last
-yaw_last = None
-pitch_last = None
+
 
 class ArmorTrackerNode(Node):
     def __init__(self, name):
