@@ -29,10 +29,10 @@ def generate_launch_description():
             emulate_tty=True,
         ),        
 
-        # 启动 armor_detector_node
+        # 启动 armor_detector_cv_node
         Node(
             package="rm_yolo_aim",
-            executable="armor_detector_node",
+            executable="armor_detector_cv_node",
             output="screen",
             emulate_tty=True,
         ),
