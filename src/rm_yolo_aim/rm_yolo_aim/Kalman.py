@@ -3,7 +3,7 @@ import cv2
 
 class KalmanFilter:
     def __init__(self):
-        self.dt = 0.1
+        self.dt = 1
         # 初始化卡尔曼滤波器
         self.kf = cv2.KalmanFilter(4, 2)  # 状态维度为4，观测维度为2
         
@@ -42,8 +42,7 @@ class KalmanFilter:
 
 # 示例用法
 if __name__ == "__main__":
-    dt = 0.1  # 时间步长
-    kf = KalmanFilter(dt)
+    kf = KalmanFilter()
 
     # 模拟传入的yaw和pitch数据
     measurements = [(1.0, 0.5),
@@ -53,5 +52,6 @@ if __name__ == "__main__":
     for yaw, pitch in measurements:
         kf.predict()  # 进行预测
         kf.update(yaw, pitch)  # 更新状态
+
         predicted_state = kf.get_state()  # 获取预测的状态
     print(f"预测的 yaw: {predicted_state[0]:.2f}, pitch: {predicted_state[1]:.2f}")
