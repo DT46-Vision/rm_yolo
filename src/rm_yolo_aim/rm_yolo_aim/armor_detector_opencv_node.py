@@ -12,27 +12,27 @@ from rm_interfaces.msg import ArmorsMsg  # 导入自定义消息类型
 
 
 # 模式参数字典
-detect_color =  2  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
-display_mode = "All"
+detect_color =  0  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
+display_mode = "None"
 # 图像参数字典
-binary_val = 45  
+binary_val = 30  
 # 灯条参数字典
 light_params = {
     "light_distance_min": 20,  # 最小灯条距离
     "light_area_min": 5,  # 最小灯条面积
-    "light_angle_min": -35,  # 最小灯条角度
-    "light_angle_max": 35,  # 最大灯条角度
-    "light_angle_tol": 5,  # 灯条角度容差
-    "line_angle_tol": 7,  # 线角度容差
-    "height_tol": 15,  # 高度容差
-    "width_tol": 15,  # 宽度容差
-    "cy_tol": 5  # 中心点的y轴容差
+    "light_angle_min": -45,  # 最小灯条角度
+    "light_angle_max": 45,  # 最大灯条角度
+    "light_angle_tol": 15,  # 灯条角度容差
+    "line_angle_tol": 10,  # 线角度容差
+    "height_tol": 18,  # 高度容差
+    "width_tol": 18,  # 宽度容差
+    "cy_tol": 10  # 中心点的y轴容差
 }
 # 装甲板参数字典
 armor_params = {
     "armor_height/width_max": 3.5,  # 装甲板高度与宽度最大比值
     "armor_height/width_min": 1,  # 装甲板高度与宽度最小比值
-    "armor_area_max": 51000,  # 装甲板最大面积
+    "armor_area_max": 81000,  # 装甲板最大面积
     "armor_area_min": 200  # 装甲板最小面积
 }
 # 颜色参数字典

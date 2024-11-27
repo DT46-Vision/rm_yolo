@@ -92,6 +92,7 @@ class ArmorTrackerNode(Node):
                         self.center_last = self.kf.get_state()  # 获取预测的状态
                     else :
                         self.center_last = (0, 0) 
+                        self.height = 0
 
             else:
                 self.time_diff_flag = False  # 停止计时器
@@ -104,7 +105,7 @@ class ArmorTrackerNode(Node):
                     print(f"预测的 yaw: {self.center_last[0]:.2f}, pitch: {self.center_last[1]:.2f}")
             yaw, pitch, deep = pixel_to_angle_and_deep(self.height, self.center_last, 72, self.pic_width) 
 
-            self.get_logger().info(f"yaw, pitch, deep, use_kf: {yaw, pitch, deep, self.use_kf}")
+            # self.get_logger().info(f"yaw, pitch, deep, use_kf: {yaw, pitch, deep, self.use_kf}")
             # 将装甲板信息字典转换为msg消息定义的格式
             tracking_armor_json = json.dumps(self.tracking_armor)
 
@@ -119,7 +120,7 @@ class ArmorTrackerNode(Node):
             tracking_armor_msg.yaw   = float(yaw)
             tracking_armor_msg.pitch = float(pitch)
             tracking_armor_msg.deep  = float(deep)
-            tracking_armor_msg.kf  = self.use_kf
+            print(tracking_armor_msg)
 
             # 发布消息
             self.pub_tracker.publish(tracking_armor_msg)

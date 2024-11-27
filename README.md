@@ -14,3 +14,4 @@
 | R4   | 红方4号 装甲板   | 9    |
 | R5   | 红方5号 装甲板   | 10   |
 | R7   | 红方哨兵 装甲板   | 11   |
+https://clickovo.notion.site/rm_vision_DT46-0d45ded58a674f359994be7473e34d8d#e8cc96b47ae6431fafe9e121d47fabff

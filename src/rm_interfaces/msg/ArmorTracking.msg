@@ -4,4 +4,3 @@ string data
 float32 yaw 0.01
 float32 pitch
 float32 deep
-bool kf
