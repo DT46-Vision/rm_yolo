@@ -10,7 +10,7 @@ from rcl_interfaces.msg import SetParametersResult  # 导入 SetParametersResult
 from rm_yolo_aim.Kalman import KalmanFilter
 from loguru import logger
 import time  # 导入时间模块
-#kalmanfilter = KalmanFilter()
+
 
 def time_diff(last_time=[None]):
     """计算两次调用之间的时间差，单位为纳秒。"""
@@ -38,7 +38,8 @@ class ArmorTrackerNode(Node):
 
         self.sub_serial = self.create_subscription(
             String, '/uart/receive', self.listener_callback_serial, 10)  # 订阅串口数据
-        self.kf = KalmanFilter()
+        self.kf_cx = KalmanFilter()
+        self.kf_cy = KalmanFilter()
         self.pub_tracker = self.create_publisher(ArmorTracking, '/tracker/target', 10)
         self.center_last = (0, 0)
         self.tracking_color = 1    # 0蓝色表示, 1表示红色, 现初始化为红色
@@ -49,14 +50,20 @@ class ArmorTrackerNode(Node):
         self.lost = 0
         self.start_time = None
         self.time_diff_flag = False
+        self.frame_add = 10
+
 
         self.declare_parameter('use_kf', self.use_kf)  # 声明 use_kf 参数
+        self.declare_parameter('frame_add', self.frame_add)  # 声明 frame_add 参数
         self.add_on_set_parameters_callback(self.param_callback)  # 添加参数回调
         self.get_logger().info('Armor Tracker Node has started.')
 
     def param_callback(self, params):
-        if params[0].name == 'use_kf':
-            self.use_kf = params[0].value
+        for param in params:
+            if param.name == 'use_kf':
+                self.use_kf = param.value
+            if param.name == 'frame_add':
+                self.frame_add = param.value
         return SetParametersResult(successful=True)  # 返回成功结果
 
     def listener_callback_cam(self, data):
@@ -65,8 +72,8 @@ class ArmorTrackerNode(Node):
 
     def listener_callback_armors(self, msg):
         try:
-            self.kf.dt = time_diff()
-            print(f"time_dt: {self.kf.dt}")
+            self.kf_cx.dt = time_diff()
+            self.kf_cy.dt = time_diff()
             # 将JSON格式的数据转换回Python字典
             armors_dict = json.loads(msg.data)
             # self.get_logger().info(f'Received armors data: {armors_dict}')
@@ -78,30 +85,25 @@ class ArmorTrackerNode(Node):
             
             if not self.tracking_armor:  # 检查 tracking_armor 是否为空
                 logger.info("tracking_armor is empty, returning default values.")
-                if self.time_diff_flag == False :
-                    self.start_time = time.time()               
-                    self.time_diff_flag = True
-                if self.time_diff_flag == True : 
-                    elapsed_time = time.time() - self.start_time  # 计算经过的时间
-                    if elapsed_time > 1 :
-                        self.center_last = (0, 0)  
-                        self.height = 0
-                else:
-                    if self.use_kf == True :
-                        self.kf.predict()  # 进行预测
-                        self.center_last = self.kf.get_state()  # 获取预测的状态
-                    else :
-                        self.center_last = (0, 0) 
-                        self.height = 0
+                self.lost += 1
+                if self.lost <= self.frame_add:
+                    self.kf_cx.predict()  # 进行预测
+                    self.kf_cy.predict()
+                    self.center_last = (self.kf_cx.get_state(), self.kf_cy.get_state())  # 获取预测的状态
+                else :
+                    self.center_last = (0, 0) 
+                    self.height = 0
 
             else:
-                self.time_diff_flag = False  # 停止计时器
+                self.lost = 0
                 self.center_last = self.tracking_armor["center"]
                 self.height = self.tracking_armor["height"]
                 if self.use_kf == True :
-                    self.kf.predict()  # 进行预测
-                    self.kf.update(self.center_last[0], self.center_last[1])  # 更新状态              
-                    self.center_last = self.kf.get_state()  # 获取预测的状态
+                    self.kf_cx.predict()  # 进行预测
+                    self.kf_cy.predict()
+                    self.kf_cx.update(self.center_last[0])  # 更新状态   
+                    self.kf_cy.update(self.center_last[1])  # 更新状态             
+                    self.center_last = (self.kf_cx.get_state(), self.kf_cy.get_state())  # 获取预测的状态
                     print(f"预测的 yaw: {self.center_last[0]:.2f}, pitch: {self.center_last[1]:.2f}")
             yaw, pitch, deep = pixel_to_angle_and_deep(self.height, self.center_last, 72, self.pic_width) 
 
