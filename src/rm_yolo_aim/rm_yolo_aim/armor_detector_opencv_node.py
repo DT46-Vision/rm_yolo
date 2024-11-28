@@ -23,8 +23,8 @@ light_params = {
     "light_area_min": 5,  # 最小灯条面积
     "light_angle_min": -45,  # 最小灯条角度
     "light_angle_max": 45,  # 最大灯条角度
-    "light_angle_tol": 15,  # 灯条角度容差
-    "line_angle_tol": 10,  # 线角度容差
+    "light_angle_tol": 7,  # 灯条角度容差
+    "line_angle_tol": 5,  # 线角度容差
     "height_tol": 18,  # 高度容差
     "width_tol": 18,  # 宽度容差
     "cy_tol": 10  # 中心点的y轴容差
