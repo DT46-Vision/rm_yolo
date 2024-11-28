@@ -91,6 +91,7 @@ class ArmorDetectorNode(Node):
                 self.get_logger().info(f'更新装甲板参数 {param.name}: {armor_params[param.name]}')  # 打印更新信息
         return SetParametersResult(successful=True)  # 返回成功结果
     
+    
     def listener_callback_camera_info(self, data):
         if self.camera_info != data:
             self.camera_info = data
