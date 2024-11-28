@@ -41,14 +41,15 @@ class ArmorTrackerNode(Node):
 
         self.pic_width = 1024       # 随便初始化一个图像宽度
         self.center_last = (0, 0)   # 默认初始化中心点坐标为(0, 0)
-        self.height = 0             # 初始化armmor高度为0
+        self.height_last = 0             # 初始化armmor高度为0
 
         self.use_kf = True          # 是否使用卡尔曼滤波
         self.kf_cx = KalmanFilter()
         self.kf_cy = KalmanFilter()
+        self.kf_h = KalmanFilter()
 
         self.lost = 0               # 初始化丢失帧数
-        self.frame_add = 25         # 初始化补帧数
+        self.frame_add = 400         # 初始化补帧数
 
         self.pub_tracker = self.create_publisher(ArmorTracking, '/tracker/target', 10) # 创建发布者/tracker/target
 
@@ -76,6 +77,7 @@ class ArmorTrackerNode(Node):
         try:
             self.kf_cx.dt = time_diff()
             self.kf_cy.dt = time_diff()
+            self.kf_h.dt = time_diff()
             # 将JSON格式的数据转换回Python字典
             armors_dict = json.loads(msg.data)
 
@@ -85,27 +87,36 @@ class ArmorTrackerNode(Node):
             
             if not self.tracking_armor:  # 检查 tracking_armor 是否为空
                 logger.info("tracking_armor is empty, returning default values.")
-                self.lost += 1
-                if self.lost <= self.frame_add:
-                    self.kf_cx.predict()  # 进行预测
-                    self.kf_cy.predict()
-                    self.center_last = (self.kf_cx.get_state(), self.kf_cy.get_state())  # 获取预测的状态
+                if self.use_kf == True :
+                    self.lost += 1
+                    if self.lost <= self.frame_add:
+                        self.kf_cx.predict()  # 进行预测
+                        self.kf_cy.predict()
+                        self.kf_h.predict()
+                        self.center_last = (self.kf_cx.get_state(), self.kf_cy.get_state())  # 获取预测的状态
+                        self.height_last = self.kf_h.get_state()
+                    else :
+                        self.center_last = (0, 0) 
+                        self.height_last = 0
                 else :
                     self.center_last = (0, 0) 
-                    self.height = 0
+                    self.height_last = 0
 
             else:
-                self.lost = 0
                 self.center_last = self.tracking_armor["center"]
-                self.height = self.tracking_armor["height"]
+                self.height_last = self.tracking_armor["height"]
                 if self.use_kf == True :
+                    self.lost = 0
                     self.kf_cx.predict()  # 进行预测
                     self.kf_cy.predict()
+                    self.kf_h.predict()
                     self.kf_cx.update(self.center_last[0])  # 更新状态   
-                    self.kf_cy.update(self.center_last[1])  # 更新状态             
+                    self.kf_cy.update(self.center_last[1])  # 更新状态 
+                    self.kf_h.update(self.height_last)            
                     self.center_last = (self.kf_cx.get_state(), self.kf_cy.get_state())  # 获取预测的状态
-                    print(f"预测的 cx: {self.center_last[0]}, cy: {self.center_last[1]}")
-            yaw, pitch, deep = pixel_to_angle_and_deep(self.height, self.center_last, 72, self.pic_width) 
+                    self.height_last = self.kf_h.get_state()
+                    print(f"预测的 cx: {self.center_last[0]}, cy: {self.center_last[1]}, h: {self.height_last}")
+            yaw, pitch, deep = pixel_to_angle_and_deep(self.height_last, self.center_last, 72, self.pic_width) 
 
             # 将装甲板信息字典转换为msg消息定义的格式
             tracking_armor_json = json.dumps(self.tracking_armor)

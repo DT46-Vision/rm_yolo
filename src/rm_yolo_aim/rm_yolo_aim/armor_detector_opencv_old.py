@@ -69,14 +69,10 @@ class ArmorDetector:  # 定义检测器类
         ]  
         for rect in lights_filtered:  # 遍历过滤后的灯条
             box = cv2.boxPoints(rect).astype(int)  # 获取旋转矩形的四个点
-            # 通过角点裁剪出对应的区域
-            x_min = min(box[:, 0])
-            x_max = max(box[:, 0])
-            y_min = min(box[:, 1])
-            y_max = max(box[:, 1])
-            roi = img_darken[y_min:y_max, x_min:x_max]  # 裁剪区域
-            # 计算裁剪图像的红色和蓝色的总和
-            sum_r, sum_b = np.sum(roi[:, :, 2]), np.sum(roi[:, :, 0])  # 计算红色和蓝色的总和
+            mask = np.zeros(img_binary.shape, dtype=np.uint8)  # 创建掩膜
+            cv2.drawContours(mask, [box], -1, 255, -1)  # 在掩膜上绘制轮廓
+            masked_img = cv2.bitwise_and(img_darken, img_darken, mask=mask)  # 按掩膜提取区域
+            sum_r, sum_b = np.sum(masked_img[:, :, 2]), np.sum(masked_img[:, :, 0])  # 计算红色和蓝色的总和
             if self.color in [1, 2] and sum_b > sum_r:  # 根据模式识别颜色
                 light_blue = Light(rect, 1)  # 创建蓝色灯条对象
                 lights.append(light_blue)  # 添加蓝色灯条
