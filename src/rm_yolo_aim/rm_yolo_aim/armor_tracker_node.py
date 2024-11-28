@@ -49,7 +49,7 @@ class ArmorTrackerNode(Node):
         self.kf_h = KalmanFilter()
 
         self.lost = 0               # 初始化丢失帧数
-        self.frame_add = 60         # 初始化补帧数
+        self.frame_add = 30         # 初始化补帧数
 
         self.pub_tracker = self.create_publisher(ArmorTracking, '/tracker/target', 10) # 创建发布者/tracker/target
 
