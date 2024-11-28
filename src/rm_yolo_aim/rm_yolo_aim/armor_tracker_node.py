@@ -38,20 +38,22 @@ class ArmorTrackerNode(Node):
 
         self.sub_serial = self.create_subscription(
             String, '/uart/receive', self.listener_callback_serial, 10)  # 订阅串口数据
+
+        self.pic_width = 1024       # 随便初始化一个图像宽度
+        self.center_last = (0, 0)   # 默认初始化中心点坐标为(0, 0)
+        self.height = 0             # 初始化armmor高度为0
+
+        self.use_kf = True          # 是否使用卡尔曼滤波
         self.kf_cx = KalmanFilter()
         self.kf_cy = KalmanFilter()
-        self.pub_tracker = self.create_publisher(ArmorTracking, '/tracker/target', 10)
-        self.center_last = (0, 0)
-        self.tracking_color = 1    # 0蓝色表示, 1表示红色, 现初始化为红色
-        self.tracking_armor = None
-        self.height = 0
-        self.use_kf = True
-        self.pic_width = 666       # 随便初始化一个图像宽度
-        self.lost = 0
-        self.start_time = None
-        self.time_diff_flag = False
-        self.frame_add = 10
 
+        self.lost = 0               # 初始化丢失帧数
+        self.frame_add = 25         # 初始化补帧数
+
+        self.pub_tracker = self.create_publisher(ArmorTracking, '/tracker/target', 10) # 创建发布者/tracker/target
+
+        self.tracking_color = 0    # 1蓝色表示, 0表示红色, 现初始化为红色
+        self.tracking_armor = None # 初始化追踪装甲板为None
 
         self.declare_parameter('use_kf', self.use_kf)  # 声明 use_kf 参数
         self.declare_parameter('frame_add', self.frame_add)  # 声明 frame_add 参数
@@ -76,10 +78,8 @@ class ArmorTrackerNode(Node):
             self.kf_cy.dt = time_diff()
             # 将JSON格式的数据转换回Python字典
             armors_dict = json.loads(msg.data)
-            # self.get_logger().info(f'Received armors data: {armors_dict}')
 
             # 选择要跟踪的装甲板
-            # self.tracking_armor = select_tracking_armor(armors_dict, 0)  # 0表示红色
             self.tracking_armor = select_tracking_armor(armors_dict, self.tracking_color)  # 0表示红色
             self.get_logger().info(f"得到需要 追踪 的装甲板 {self.tracking_armor}")
             
@@ -104,10 +104,9 @@ class ArmorTrackerNode(Node):
                     self.kf_cx.update(self.center_last[0])  # 更新状态   
                     self.kf_cy.update(self.center_last[1])  # 更新状态             
                     self.center_last = (self.kf_cx.get_state(), self.kf_cy.get_state())  # 获取预测的状态
-                    print(f"预测的 yaw: {self.center_last[0]:.2f}, pitch: {self.center_last[1]:.2f}")
+                    print(f"预测的 cx: {self.center_last[0]}, cy: {self.center_last[1]}")
             yaw, pitch, deep = pixel_to_angle_and_deep(self.height, self.center_last, 72, self.pic_width) 
 
-            # self.get_logger().info(f"yaw, pitch, deep, use_kf: {yaw, pitch, deep, self.use_kf}")
             # 将装甲板信息字典转换为msg消息定义的格式
             tracking_armor_json = json.dumps(self.tracking_armor)
 

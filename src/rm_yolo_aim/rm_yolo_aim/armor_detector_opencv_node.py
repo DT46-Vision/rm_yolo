@@ -124,8 +124,6 @@ class ArmorDetectorNode(Node):
             result_img_msg = self.cv_bridge.cv2_to_imgmsg(result_img, 'bgr8')
             result_img_msg.header.frame_id = "camera_optical_frame"
             self.publisher_img.publish(result_img_msg)
-        
-        # self.get_logger().info('Published processed image to /detector/result_img')
 
         # 将装甲板信息字典转换为JSON格式的字符串
         armors_json = json.dumps(armors_dict)

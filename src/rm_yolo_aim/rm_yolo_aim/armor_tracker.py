@@ -5,35 +5,27 @@ from loguru import logger
 RAD2DEG = 180 / math.pi
 DEG2RAD = math.pi / 180
 
-
-
 def select_tracking_armor(armors_dict, color):
 
     # 筛选垂直方向的长度大于20像素的装甲板
     filtered_height_data = {k: v for k, v in armors_dict.items() if v["height"] > 20}
 
-    # 根据颜色筛选 0: 蓝色, 1: 红色
-    if color == 0:
+    # 根据颜色筛选 1: 蓝色, 0: 红色
+    if color == 1:
         filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] < 6}
-    elif color == 1:
+    elif color == 0:
         filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] > 5}
 
     # 最终筛选
     if not filtered_color_data:
         tracking_armor = {}
     else:
-        # 找到 center 中 x 绝对值最小的条目
-        # min_abs_center_key = min(filtered_color_data.items(), key=lambda k: abs(filtered_color_data[k]["center"][0]))
-        # min_abs_center_value = filtered_color_data[min_abs_center_key]
 
-        # 在剩余选项中找出 height 最大的条目
+        # 找出 height 最大的条目
         tracking_armor = max(filtered_color_data.items(), key=lambda item: item[1]["height"])[1]
-
-    # logger.info(f"tracking_armor: {tracking_armor}")
 
     return tracking_armor
 
-#def pixel_to_angle_and_deep(kalmanfilter, tracking_armor, vfov, pic_width):
 def pixel_to_angle_and_deep(height, center, vfov, pic_width):
 
     # 估计距离

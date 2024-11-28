@@ -189,27 +189,31 @@ class ArmorDetector:  # 定义检测器类
         return undistorted_image
     
     def display(self):
-        if self.display_mode == "Binary" or self.display_mode == 1:
+        if self.img_binary is None and self.img is None:
+            return None, None
+        if self.display_mode == "Binary" or self.display_mode == "1":
             return self.img_binary, None
-        elif self.display_mode == "All" or self.display_mode == 2:
+        elif self.display_mode == "All" or self.display_mode == "2":
             self.draw = self.draw_img() 
             return self.img_binary, self.draw
-        elif self.display_mode == "None" or self.display_mode == 0:
+        elif self.display_mode == "None" or self.display_mode == "0":
             return None, None
         else:
             print("Invalid display mode")
             return None, None
 
-    def detect_armor(self, frame):  # 检测函数
-        frame_binary = self.process(frame)  # 处理图像
-        self.find_lights(self.img, frame_binary)  # 查找灯条
-        armors_dict = self.find_armor()  # 查找装甲板
-
-        return armors_dict
+    def detect_armor(self, frame = None):  # 检测函数
+        if frame is not None :
+            frame_binary = self.process(frame)  # 处理图像
+            self.find_lights(self.img, frame_binary)  # 查找灯条
+            armors_dict = self.find_armor()  # 查找装甲板
+            return armors_dict
+        else :
+            return self.armors_dict
         
 if __name__ == "__main__":  # 主程序入口
     # 模式参数字典
-    detect_color =  2  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
+    detect_color =  0  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
     display_mode = "All" # 显示模式 None: 不显示, Binary: 显示二值化图, All: 显示二值化图和结果图像
     # 图像参数字典
     binary_val = 35  
@@ -229,7 +233,7 @@ if __name__ == "__main__":  # 主程序入口
     armor_params = {
         "armor_height/width_max": 3.5,  # 装甲板高度与宽度最大比值
         "armor_height/width_min": 1,  # 装甲板高度与宽度最小比值
-        "armor_area_max": 11000,  # 装甲板最大面积
+        "armor_area_max": 51000,  # 装甲板最大面积
         "armor_area_min": 200  # 装甲板最小面积
     }
     # 颜色参数字典
@@ -240,7 +244,7 @@ if __name__ == "__main__":  # 主程序入口
         "light_dot": {1: (0, 0, 255), 0: (255, 0, 0)}  # 灯条中心点颜色映射
     }
     detector = ArmorDetector(detect_color, display_mode, binary_val, light_params, armor_params, color_params)  # 创建检测器对象
-    info = detector.detect_armor(cv2.imread('D:\/rm_yolo\src\/rm_yolo_aim\/test\/b.jpg'))  # 读取图像并进行检测
+    info = detector.detect_armor(cv2.imread('src/rm_yolo_aim/test/rb.jpeg'))  # 读取图像并进行检测
     detector.display()  # 显示图像
     logger.info(info) # 打印检测结果
     cv2.waitKey(0)  # 等待按键
