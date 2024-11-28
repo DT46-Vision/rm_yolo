@@ -56,26 +56,51 @@ class ArmorDetector:  # 定义检测器类
                 if max_a < min_b or max_b < min_a:  # 检查是否相交
                     return False  # 不相交则返回 False
     
-    def find_lights(self, img_darken, img_binary):  # 查找灯条的函数
+    def find_lights(self, img_binary):  # 查找灯条的函数
         lights = []
         contours, _ = cv2.findContours(img_binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
+        
         lights_filtered = [  # 过滤灯条
             self.adjust(cv2.minAreaRect(contour)) for contour in contours 
             if cv2.contourArea(contour) > self.light_params["light_area_min"] and self.light_params["light_angle_min"] <= self.adjust(cv2.minAreaRect(contour))[2] <= self.light_params["light_angle_max"]  # 过滤小轮廓和大于-30°到30°的旋转矩形
         ]  # 过滤条件合并为一个列表理解式
+
         lights_filtered = [  # 进一步过滤重叠的灯条
             light for light in lights_filtered 
             if not any(self.is_coincide(cv2.boxPoints(light).astype(int), cv2.boxPoints(other_light).astype(int)) for other_light in lights_filtered if light != other_light)  # 检查重叠
         ]  
+
         for rect in lights_filtered:  # 遍历过滤后的灯条
             box = cv2.boxPoints(rect).astype(int)  # 获取旋转矩形的四个点
+                        
             # 通过角点裁剪出对应的区域
-            x_min = min(box[:, 0])
-            x_max = max(box[:, 0])
-            y_min = min(box[:, 1])
-            y_max = max(box[:, 1])
-            roi = img_darken[y_min:y_max, x_min:x_max]  # 裁剪区域
-            # 计算裁剪图像的红色和蓝色的总和
+            right_up_x, right_up_y = box[0]
+            left_up_x, left_up_y = box[3]
+
+            up_x = int(abs(right_up_x - left_up_x) / 2 + min(right_up_x, left_up_x))
+            up_y = int(abs(right_up_y - left_up_y) / 2 + min(right_up_y, left_up_y))
+
+            right_down_x, right_down_y = box[1]
+            left_down_x, left_down_y = box[2]
+            
+            down_x = int((abs(right_down_x - left_down_x) / 2 + min(right_down_x, left_down_x)))
+            down_y = int((abs(right_down_y - left_down_y) / 2 + min(right_down_y, left_down_y)))
+            # 计算线段的长度
+            length = int(np.sqrt((down_x - up_x) ** 2 + (down_y - up_y) ** 2))
+            # 创建一个新图像以存储裁剪的线段像素
+            roi = np.zeros((1, length, 3), dtype=np.uint8)
+
+            # 计算线段上的每个像素
+            for i in range(length):
+                # 计算当前像素的坐标
+                t = i / length  # 计算比例
+                current_x = int(up_x + (down_x - up_x) * t)
+                current_y = int(up_y + (down_y - up_y) * t)
+                            
+                # 添加边界检查
+                if 0 <= current_x < self.img.shape[1] and 0 <= current_y < self.img.shape[0]:
+                    roi[0, i] = self.img[current_y, current_x]  # 保存像素值
+            #计算裁剪图像的红色和蓝色的总和
             sum_r, sum_b = np.sum(roi[:, :, 2]), np.sum(roi[:, :, 0])  # 计算红色和蓝色的总和
             if self.color in [1, 2] and sum_b > sum_r:  # 根据模式识别颜色
                 light_blue = Light(rect, 1)  # 创建蓝色灯条对象
@@ -209,7 +234,7 @@ class ArmorDetector:  # 定义检测器类
     def detect_armor(self, frame = None):  # 检测函数
         if frame is not None :
             frame_binary = self.process(frame)  # 处理图像
-            self.find_lights(self.img, frame_binary)  # 查找灯条
+            self.find_lights(frame_binary)  # 查找灯条
             armors_dict = self.find_armor()  # 查找装甲板
             return armors_dict
         else :
