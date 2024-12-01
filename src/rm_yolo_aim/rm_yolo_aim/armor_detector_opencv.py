@@ -238,10 +238,12 @@ class ArmorDetector:  # 定义检测器类
     def draw_armors(self, img):  # 绘制装甲板的函数
         for armor in self.armors:  # 遍历装甲板
             center = armor.center
+            img_height, img_width = self.img.shape[:2]
+            center_x = int(center[0] - (img_width / 2))
+            center_y = -int(center[1] - (img_height / 2)) # 图片的y轴和准星的y轴是反的
             cv2.line(img, armor.light1_up, armor.light2_down, self.armor_color[armor.color], 1) 
             cv2.line(img, armor.light2_up, armor.light1_down, self.armor_color[armor.color], 1) 
-            center_x, center_y = map(int, center)  # 获取中心坐标
-            cv2.putText(img, f"({center_x}, {center_y})", (center_x, center_y),  # 在图像上标记坐标
+            cv2.putText(img, f"({center_x}, {center_y})", (center[0], center[1]),  # 在图像上标记坐标
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (120, 255, 255), 2)  # 绘制文本
         return img
 
