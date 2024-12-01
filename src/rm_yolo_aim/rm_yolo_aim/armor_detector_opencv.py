@@ -201,8 +201,7 @@ class ArmorDetector:  # 定义检测器类
                     if close == True and height is not None :
                         armor = Armor(light, lights[j], height)  # 创建装甲板对象
                         armors.append(armor)  # 添加装甲板到列表
-                        processed_indices.update([i])  # 将已处理的矩形索引添加到 processed_indices 中
-                        processed_indices.update([j])  # 将已处理的矩形索引添加到 processed_indices 中
+                        processed_indices.update([i] + [j])  # 将已处理的矩形索引添加到 processed_indices 中
         self.armors = armors
         return self.armors
 
