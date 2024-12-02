@@ -292,8 +292,6 @@ class ArmorDetector:  # 定义检测器类
         return undistorted_image
 
     def display(self):
-        if self.img_binary is None and self.img is None:
-            return None, None
         if self.display_mode == 1 :
             return self.img_binary, None
         elif self.display_mode == 2 :

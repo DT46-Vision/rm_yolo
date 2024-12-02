@@ -31,8 +31,6 @@ class ArmorTrackerNode(Node):
 
         self.sub_armors = self.create_subscription(
             ArmorsMsg, '/detector/armors_info', self.listener_callback_armors, 10)  # 订阅装甲板信息
-        self.sub_armors = self.create_subscription(
-            ArmorsMsg, '/detector/armors_info', self.listener_callback_armors, 10)  # 订阅装甲板信息
         self.sub_cam    = self.create_subscription(
             Image, 'image_raw', self.listener_callback_cam, 10)
 
@@ -75,9 +73,10 @@ class ArmorTrackerNode(Node):
 
     def listener_callback_armors(self, msg):
         try:
-            self.kf_cx.dt = time_diff()
-            self.kf_cy.dt = time_diff()
-            self.kf_h.dt = time_diff()
+            dt = time_diff()
+            self.kf_cx.dt = dt
+            self.kf_cy.dt = dt
+            self.kf_h.dt = dt
             # 将JSON格式的数据转换回Python字典
             armors_dict = json.loads(msg.data)
 
