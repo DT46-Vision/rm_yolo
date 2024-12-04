@@ -15,15 +15,15 @@ import time
 detect_color =  0  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
 display_mode = 0 # 显示模式 None: 不显示, Binary: 显示二值化图, All: 显示二值化图和结果图像
 # 图像参数字典
-binary_val = 35  
+binary_val = 26  
 light_params = {
     "light_area_min": 5,  # 最小灯条面积
     "light_angle_min": -45,  # 最小灯条角度
     "light_angle_max": 45,  # 最大灯条角度
-    "light_angle_tol": 20,  # 灯条角度容差
-    "vertical_discretization": 1.20,  # 垂直离散
+    "light_angle_tol": 10,  # 灯条角度容差
+    "vertical_discretization": 0.7,  # 垂直离散
     "height_tol": 15,  # 高度容差
-    "cy_tol": 5,  # 中心点的y轴容差
+    "cy_tol": 13,  # 中心点的y轴容差
     "height_multiplier": 3.5 
 }
 # 颜色参数字典
