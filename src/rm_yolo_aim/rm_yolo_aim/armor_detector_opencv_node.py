@@ -20,11 +20,11 @@ light_params = {
     "light_area_min": 5,  # 最小灯条面积
     "light_angle_min": -45,  # 最小灯条角度
     "light_angle_max": 45,  # 最大灯条角度
-    "light_angle_tol": 10,  # 灯条角度容差
-    "vertical_discretization": 0.7,  # 垂直离散
+    "light_angle_tol": 8,  # 灯条角度容差
+    "vertical_discretization": 0.8,  # 垂直离散
     "height_tol": 15,  # 高度容差
-    "cy_tol": 13,  # 中心点的y轴容差
-    "height_multiplier": 3.8 
+    "cy_tol": 7,  # 中心点的y轴容差
+    "height_multiplier": 2 
 }
 # 颜色参数字典
 color_params = {
