@@ -188,8 +188,8 @@ class ArmorDetector:  # 定义检测器类
                     if distance > height :
                         if distance < height * self.light_params["height_multiplier"]:
                             return True, height # if small armor
-                        else if height * self.light_params["height_multiplier]" * 0.8 <= distance <= height * self.light_params["height_multiplier]" * 1.2:
-                            return True, height # if large armor
+                        elif distance > height * 0.8 * self.light_params["height_multiplier"] and distance < height * 1.2 * self.light_params["height_multiplier"]:
+                                return True, height # if large armor
         return False, None # 不满足条件则返回 False
 
     def is_armor(self, lights):  # 检查是否为装甲板的函数
