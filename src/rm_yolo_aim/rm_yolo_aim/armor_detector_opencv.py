@@ -183,8 +183,13 @@ class ArmorDetector:  # 定义检测器类
                 if abs(slope1 * slope_line + 1) < light_params["vertical_discretization"] or abs(slope2 * slope_line + 1) < light_params["vertical_discretization"]:
                     height = max(light1.height, light2.height)
                     distance = calculate_distance((light1.cx, light1.cy), (light2.cx, light2.cy))
-                    if distance > height and distance < height * self.light_params["height_multiplier"]:
-                        return True, distance # 检查是否垂直
+                    # if distance > height and distance < height * self.light_params["height_multiplier"]:
+                    #     return True, height # 检查distance
+                    if distance > height :
+                        if distance < height * self.light_params["height_multiplier"]:
+                            return True, height # if small armor
+                        else if height * self.light_params["height_multiplier]" * 0.8 <= distance <= height * self.light_params["height_multiplier]" * 1.2:
+                            return True, height # if large armor
         return False, None # 不满足条件则返回 False
 
     def is_armor(self, lights):  # 检查是否为装甲板的函数
