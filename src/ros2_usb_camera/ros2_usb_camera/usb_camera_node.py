@@ -14,11 +14,11 @@ from cv_bridge import CvBridge
 # 摄像头参数
 camera_params = {
     'camera_id': 0,
-    'image_width': 1280,
-    'image_height': 720,
+    'image_width': 1920,
+    'image_height': 1080,
     'auto_exposure': 1,
     'exposure_time': 100,
-    'fps': 60,
+    'fps': 120,
     'gain': 100,
 }
 
@@ -160,12 +160,12 @@ class USBCameraNode(Node):
             ret, frame = self.cap.read()
 
             if ret:
-                if os.environ.get('DISPLAY') and os.isatty(0):  # 检查有无图形界面
-                    cv2.namedWindow("raw", cv2.WINDOW_NORMAL)
-                    cv2.imshow("raw", frame)
+                # if os.environ.get('DISPLAY') and os.isatty(0):  # 检查有无图形界面
+                #     cv2.namedWindow("raw", cv2.WINDOW_NORMAL)
+                #     cv2.imshow("raw", frame)
                 
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        break 
+                #     if cv2.waitKey(1) & 0xFF == ord('q'):
+                #         break 
 
                 dt = time_diff()         
 
