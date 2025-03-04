@@ -8,7 +8,7 @@ DEG2RAD = math.pi / 180
 def select_tracking_armor(armors_dict, color):
 
     # 筛选垂直方向的长度大于20像素的装甲板
-    filtered_height_data = {k: v for k, v in armors_dict.items() if v["height"] > 20}
+    filtered_height_data = {k: v for k, v in armors_dict.items() if v["height"] > 1}
 
     # 根据颜色筛选 1: 蓝色, 0: 红色
     if color == 1:
