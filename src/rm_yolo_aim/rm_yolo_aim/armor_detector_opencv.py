@@ -163,15 +163,15 @@ class ArmorDetector:  # 定义检测器类
         return self.lights
 
     def is_close(self, light1, light2, light_params):  # 检查两个矩形是否接近
-        angle_diff = abs(light1.angle - light2.angle)  # 计算角度差
         if abs(light1.cy - light2.cy) < light_params["cy_tol"]: 
-                    height = min(light1.height, light2.height)
-                    distance = calculate_distance((light1.cx, light1.cy), (light2.cx, light2.cy))                    
-                    if distance > height :
-                        if distance < height * self.light_params["height_multiplier"]:
-                            return True, height # first small armor
-                        elif distance < height * 1.86 * self.light_params["height_multiplier"]:
-                            return True, height # last large armor
+            height = min(light1.height, light2.height)
+            distance = calculate_distance((light1.cx, light1.cy), (light2.cx, light2.cy))                    
+            if distance > height :
+                if distance < height * self.light_params["height_multiplier"]:
+                    return True, height # first small armor
+                elif distance < height * 1.86 * self.light_params["height_multiplier"]:
+                    return True, height # last large armor
+        angle_diff = abs(light1.angle - light2.angle)  # 计算角度差
         if angle_diff <= light_params["light_angle_tol"]:  # 判断角度差是否在容忍范围内
             if abs(light1.height - light2.height) <= light_params["height_tol"]:  # 判断高差
                 light1_angle = math.degrees(math.atan2(light1.up[1]- light1.down[1], light1.up[0] - light1.down[0]))  # 计算连线角度
