@@ -9,32 +9,46 @@ def select_tracking_armor(armors_dict, color):
 
     # 筛选垂直方向的长度大于20像素的装甲板
     filtered_height_data = {k: v for k, v in armors_dict.items() if v["height"] > 1}
-
+    # 最终筛选
+    if not filtered_height_data:
+        tracking_armor = {}
+        return tracking_armor
+    
     # 根据颜色筛选 1: 蓝色, 0: 红色
     if color == 1:
-        big_one = {k: v for k, v in filtered_height_data.items() if v["class_id"] == 0}
-        
-        if big_one is not None:
-            return big_one
-        
         filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] < 6}
+        # 按高度排序并取前两个条目
+        top_two = sorted(filtered_color_data.items(), key=lambda item: item[1]["height"], reverse=True)[:2]
+
+        # 检查 top_two 中的 class_id
+        class_ids = [v['class_id'] for k, v in top_two]
+        
+        # 如果存在 class_id 为 0
+        if 0 in class_ids:
+            # 如果两个都是 class_id 为 0, 则返回高度最大的
+            if class_ids.count(0) == 2:
+                return max(top_two, key=lambda item: item[1]["height"])
+            else:
+                # 否则返回 class_id 为 0 的条目
+                return {k: v for k, v in top_two if v['class_id'] == 0}
     
     elif color == 0:
-        big_one = {k: v for k, v in filtered_height_data.items() if v["class_id"] == 6}
+        filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] > 5}
+        # 按高度排序并取前两个条目
+        top_two = sorted(filtered_color_data.items(), key=lambda item: item[1]["height"], reverse=True)[:2]
 
-        if big_one != {}:
-            return big_one
+        # 检查 top_two 中的 class_id
+        class_ids = [v['class_id'] for k, v in top_two]
+        
+        # 如果存在 class_id 为 6
+        if 6 in class_ids:
+            # 如果两个都是 class_id 为 6, 则返回高度最大的
+            if class_ids.count(6) == 2:
+                return max(top_two, key=lambda item: item[1]["height"])
+            else:
+                # 否则返回 class_id 为 6 的条目
+                return {k: v for k, v in top_two if v['class_id'] == 6}
 
-        filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] > 6}
-
-    # 最终筛选
-    if not filtered_color_data:
-        tracking_armor = {}
-    else:
-        # 找出 height 最大的条目
-        tracking_armor = max(filtered_color_data.items(), key=lambda item: item[1]["height"])[1]
-
-    return tracking_armor
 
 def pixel_to_angle_and_deep(height, center, vfov, pic_width):
 
