@@ -162,16 +162,18 @@ class ArmorDetector:  # 定义检测器类
         self.lights = lights
         return self.lights
 
-    def is_close(self, light1, light2, light_params):  # 检查两个矩形是否接近
+    def is_close(self, light1, light2, light_params):  # 检查两个矩形是否接近则返回一个高度
         if abs(light1.cy - light2.cy) < light_params["cy_tol"]: 
             height = min(light1.height, light2.height)
             distance = calculate_distance((light1.cx, light1.cy), (light2.cx, light2.cy))                    
             if distance > height :
                 if distance < height * self.light_params["height_multiplier"]:
-                    return True, height # first small armor
+                    return height # first small armor
                 elif distance < height * 1.86 * self.light_params["height_multiplier"]:
-                    return True, height # last large armor
+                    return height # last large armor
+                
         angle_diff = abs(light1.angle - light2.angle)  # 计算角度差
+
         if angle_diff <= light_params["light_angle_tol"]:  # 判断角度差是否在容忍范围内
             if abs(light1.height - light2.height) <= light_params["height_tol"]:  # 判断高差
                 light1_angle = math.degrees(math.atan2(light1.up[1]- light1.down[1], light1.up[0] - light1.down[0]))  # 计算连线角度
@@ -187,10 +189,11 @@ class ArmorDetector:  # 定义检测器类
                     distance = calculate_distance((light1.cx, light1.cy), (light2.cx, light2.cy))
                     if distance > height :
                         if distance < height * self.light_params["height_multiplier"]:
-                            return True, height # first small armor
+                            return height # first small armor
                         elif distance < height * 1.86 * self.light_params["height_multiplier"]:
-                            return True, height # last large armor
-        return False, None # 不满足条件则返回 False
+                            return height # last large armor
+                        
+        return None # 不满足条件则返回 False
 
     def is_armor(self, lights):  # 检查是否为装甲板的函数
         armors = []
@@ -202,8 +205,8 @@ class ArmorDetector:  # 定义检测器类
             light = lights[i]  # 取出当前灯条
             for j in range(lights_count) : 
                 if j != i and lights[j].color == light.color :  # 如果找到接近的灯条
-                    close, height = self.is_close(light, lights[j], self.light_params)
-                    if close == True and height is not None :
+                    height = self.is_close(light, lights[j], self.light_params)
+                    if height is not None :
                         armor = Armor(light, lights[j], height)  # 创建装甲板对象
                         armors.append(armor)  # 添加装甲板到列表
                         processed_indices.update([i] + [j])  # 将已处理的矩形索引添加到 processed_indices 中
