@@ -18,8 +18,11 @@ USER = os.environ['USER']
 
 # detector = ArmorDetector('/home/morefine/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best.pt')             # pt 原始模型
 detector = ArmorDetector()  # openvino 模型
+# detector.model_path = (
+#         f"/home/{USER}/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best_openvino_model/"
+#     )
 detector.model_path = (
-        f"/home/{USER}/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best_openvino_model/"
+        f"/home/{USER}/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/320_int8_openvino_model/"
     )
 
 class ArmorDetectorNode(Node):

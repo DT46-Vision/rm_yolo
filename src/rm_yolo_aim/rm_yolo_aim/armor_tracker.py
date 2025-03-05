@@ -12,15 +12,25 @@ def select_tracking_armor(armors_dict, color):
 
     # 根据颜色筛选 1: 蓝色, 0: 红色
     if color == 1:
+        big_one = {k: v for k, v in filtered_height_data.items() if v["class_id"] == 0}
+        
+        if big_one is not None:
+            return big_one
+        
         filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] < 6}
+    
     elif color == 0:
-        filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] > 5}
+        big_one = {k: v for k, v in filtered_height_data.items() if v["class_id"] == 6}
+
+        if big_one != {}:
+            return big_one
+
+        filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] > 6}
 
     # 最终筛选
     if not filtered_color_data:
         tracking_armor = {}
     else:
-
         # 找出 height 最大的条目
         tracking_armor = max(filtered_color_data.items(), key=lambda item: item[1]["height"])[1]
 

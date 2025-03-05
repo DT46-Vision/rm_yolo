@@ -25,6 +25,7 @@ def calculate_distance(point1, point2):
     distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
     return distance
 
+
 def adjust(w_h, angle):  # 调整矩形的函数
     (w, h) = w_h
     if w > h:  # 如果宽度大于高度
@@ -35,13 +36,16 @@ def adjust(w_h, angle):  # 调整矩形的函数
             angle = angle + 90
     return (w, h), angle  # 返回调整后的结果
 
+
 def angle_to_slope(angle_degrees):
     angle_radians = math.radians(angle_degrees)    # 将角度转换为弧度
     slope = math.tan(angle_radians)    # 计算斜率
     return slope
 
+
 def project(polygon, axis):  # 投影计算
     return np.dot(polygon, axis).min(), np.dot(polygon, axis).max()  # 计算最小值和最大值
+
 
 def is_coincide(a, b):  # 检查两个多边形是否重叠
     for polygon in (a, b):  # 遍历多边形 a 和 b
@@ -53,6 +57,7 @@ def is_coincide(a, b):  # 检查两个多边形是否重叠
             if max_a < min_b or max_b < min_a:  # 检查是否相交
                 return False  # 不相交则返回 False
 
+
 class Light:  # 定义灯条类
     def __init__(self, up, down, angle, color):  # 初始化灯条的矩形和颜色
         self.cx = int(abs(up[0] - down[0]) / 2 + min(up[0], down[0]))
@@ -63,8 +68,9 @@ class Light:  # 定义灯条类
         self.down = down
         self.angle = angle
 
+
 class Armor:  # 定义装甲板类
-    def __init__(self, light1, light2, height):  # 初始化装甲板的矩形
+    def __init__(self, light1, light2, height, type):  # 初始化装甲板的矩形
         armor_cx = int(abs(light1.cx - light2.cx) / 2 + min(light1.cx, light2.cx))
         armor_cy = int(abs(light1.cy - light2.cy) / 2 + min(light1.cy, light2.cy))
         self.center = (armor_cx, armor_cy)
@@ -74,6 +80,20 @@ class Armor:  # 定义装甲板类
         self.light2_down = light2.down
         self.color = light1.color  # 装甲板颜色初始化为 None
         self.height = height
+        self.type = type # 1 :大装甲板, 0 :小装甲板
+    
+    def type_class(self):
+        if self.color == 0:
+            if self.type == 0:
+                return 7
+            if self.type == 1:
+                return 6
+            
+        if self.color == 1:
+            if self.type == 0:
+                return 1
+            if self.type == 1:
+                return 0
 
 
 class ArmorDetector:  # 定义检测器类
@@ -89,7 +109,6 @@ class ArmorDetector:  # 定义检测器类
         self.display_mode = display_mode # 显示模式
         self.light_params = light_params  # 灯条参数
         self.armor_color = color_params["armor_color"]  # 装甲板颜色映射
-        self.armor_id = color_params["armor_id"]  # 装甲板 ID 映射
         self.light_color = color_params["light_color"]  # 灯条颜色映射
         self.light_dot = color_params["light_dot"]  # 灯条中心点颜色映射
 
@@ -98,6 +117,8 @@ class ArmorDetector:  # 定义检测器类
         self.img = img
         _, self.img_binary = cv2.threshold(cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY), self.binary_val, 255, cv2.THRESH_BINARY)  # 二值化处理
         return self.img_binary
+    
+
     def find_lights(self, img_binary):  # 查找灯条的函数
         lights = []
         is_lights = []
@@ -162,15 +183,16 @@ class ArmorDetector:  # 定义检测器类
         self.lights = lights
         return self.lights
 
+
     def is_close(self, light1, light2, light_params):  # 检查两个矩形是否接近则返回一个高度
         if abs(light1.cy - light2.cy) < light_params["cy_tol"]: 
             height = min(light1.height, light2.height)
             distance = calculate_distance((light1.cx, light1.cy), (light2.cx, light2.cy))                    
             if distance > height :
                 if distance < height * self.light_params["height_multiplier"]:
-                    return height # first small armor
+                    return 0, height # first small armor
                 elif distance < height * 1.86 * self.light_params["height_multiplier"]:
-                    return height # last large armor
+                    return 1, height # last large armor
                 
         angle_diff = abs(light1.angle - light2.angle)  # 计算角度差
 
@@ -189,11 +211,12 @@ class ArmorDetector:  # 定义检测器类
                     distance = calculate_distance((light1.cx, light1.cy), (light2.cx, light2.cy))
                     if distance > height :
                         if distance < height * self.light_params["height_multiplier"]:
-                            return height # first small armor
+                            return 0, height # first small armor
                         elif distance < height * 1.86 * self.light_params["height_multiplier"]:
-                            return height # last large armor
+                            return 1, height # last large armor
                         
-        return None # 不满足条件则返回 False
+        return None, None # 不满足条件则返回 None
+
 
     def is_armor(self, lights):  # 检查是否为装甲板的函数
         armors = []
@@ -205,13 +228,14 @@ class ArmorDetector:  # 定义检测器类
             light = lights[i]  # 取出当前灯条
             for j in range(lights_count) : 
                 if j != i and lights[j].color == light.color :  # 如果找到接近的灯条
-                    height = self.is_close(light, lights[j], self.light_params)
+                    type, height = self.is_close(light, lights[j], self.light_params)
                     if height is not None :
-                        armor = Armor(light, lights[j], height)  # 创建装甲板对象
+                        armor = Armor(light, lights[j], height, type)  # 创建装甲板对象
                         armors.append(armor)  # 添加装甲板到列表
                         processed_indices.update([i] + [j])  # 将已处理的矩形索引添加到 processed_indices 中
         self.armors = armors
         return self.armors
+
 
     def id_armor(self):  # 为装甲板分配 ID 的函数
         armors_dict = {}
@@ -224,17 +248,19 @@ class ArmorDetector:  # 定义检测器类
             center_y = -int(center[1] - (img_height / 2)) # 图片的y轴和准星的y轴是反的
 
             armors_dict[int(center[0])] = {  # 添加装甲板信息到字典
-                "class_id": self.armor_id[armor.color],  # 添加 armor_id
+                "class_id": armor.type_class(),  # 添加 armor_id
                 "height": armor.height,  # 添加高度
                 "center": [center_x, center_y]  # 添加中心点
             }
         self.armors_dict = armors_dict
         return armors_dict
     
+
     def find_armor(self):  # 查找装甲板的函数
         self.is_armor(self.lights)  # 查找装甲板
         armors_dict = self.id_armor()  # 为装甲板分配 ID
         return armors_dict
+
 
     def draw_lights(self, img):  # 绘制灯条的函数
             for light in self.lights:  # 遍历灯条
@@ -243,6 +269,8 @@ class ArmorDetector:  # 定义检测器类
                 # 绘制中心点
                 cv2.circle(img, (light.cx, light.cy), 1, self.light_dot[light.color], -1)  # 5是半径，-1表示填充
             return img
+    
+
     def draw_armors(self, img):  # 绘制装甲板的函数
         for armor in self.armors:  # 遍历装甲板
             center = armor.center
@@ -255,11 +283,13 @@ class ArmorDetector:  # 定义检测器类
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (120, 255, 255), 2)  # 绘制文本
         return img
 
+
     def draw_img(self):
         self.draw = self.img.copy()
         self.draw = self.draw_armors(self.draw)  # 绘制装甲板
         self.draw = self.draw_lights(self.draw)  # 绘制灯条
         return self.draw
+
 
     def undistort_image(self, cv_image, camera_info):
         dt = time_diff()
@@ -299,6 +329,7 @@ class ArmorDetector:  # 定义检测器类
         
         return undistorted_image
 
+
     def display(self):
         if self.display_mode == 1 :
             return self.img_binary, None
@@ -311,6 +342,7 @@ class ArmorDetector:  # 定义检测器类
             print("Invalid display mode")
             return None, None
 
+
     def detect_armor(self, frame = None):  # 检测函数
         if frame is not None :
             frame_binary = self.process(frame)  # 处理图像
@@ -320,6 +352,7 @@ class ArmorDetector:  # 定义检测器类
         else :
             return self.armors_dict
         
+
 if __name__ == "__main__":  # 主程序入口
     # 模式参数字典
     detect_color =  0  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
@@ -339,7 +372,6 @@ if __name__ == "__main__":  # 主程序入口
     # 颜色参数字典
     color_params = {
         "armor_color": {1: (255, 255, 0), 0: (128, 0, 128)},  # 装甲板颜色映射
-        "armor_id": {1: 1, 0: 7},  # 装甲板 ID 映射
         "light_color": {1: (200, 71, 90), 0: (0, 100, 255)},  # 灯条颜色映射
         "light_dot": {1: (0, 0, 255), 0: (255, 0, 0)}  # 灯条中心点颜色映射
     }
