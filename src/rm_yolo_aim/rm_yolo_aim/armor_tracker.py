@@ -8,75 +8,23 @@ DEG2RAD = math.pi / 180
 def select_tracking_armor(armors_dict, color):
 
     # 筛选垂直方向的长度大于20像素的装甲板
-    filtered_height_data = {k: v for k, v in armors_dict.items() if v["height"] > 1}
-    
-    # 没有直接退出
-    if not filtered_height_data:
-        tracking_armor = {}
-        return tracking_armor
-    
+    filtered_height_data = {k: v for k, v in armors_dict.items() if v["height"] > 20}
+
     # 根据颜色筛选 1: 蓝色, 0: 红色
     if color == 1:
         filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] < 6}
-        
-        # 没有直接退出
-        if not filtered_color_data:
-            tracking_armor = {}
-            return tracking_armor
-        
-        # 检查 filtered_color_data 的数量
-        if len(filtered_color_data) == 1:
-            tracking_armor = next(iter(filtered_color_data.values()))
-            return tracking_armor
-
-        # 按高度排序并取前两个条目
-        top_two_heighest_armor = sorted(filtered_color_data.items(), key=lambda item: item[1]["height"], reverse=True)[:2]
-        
-        # 检查 top_two_heighest_armor 中的 class_id
-        class_ids = [v['class_id'] for k, v in top_two_heighest_armor]
-        
-        # 如果存在 class_id 为 0
-        if 0 in class_ids:
-            # 如果两个都是 class_id 为 0, 则返回高度最大的
-            if class_ids.count(0) == 2:
-                return max(top_two_heighest_armor, key=lambda item: item[1]["height"])[1]  # 返回最高的
-            else:
-                # 返回 class_id 为 0 的第一个条目的值
-                return next((v for v in top_two_heighest_armor if v[1]['class_id'] == 0), None)[1]
-        else:
-            return max(top_two_heighest_armor, key=lambda item: item[1]["height"])[1]  # 返回最高的
-    
     elif color == 0:
-
         filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] > 5}
-        
-        # 没有直接退出
-        if not filtered_color_data:
-            tracking_armor = {}
-            return tracking_armor
-        
-        # 检查 filtered_color_data 的数量
-        if len(filtered_color_data) == 1:
-            tracking_armor = next(iter(filtered_color_data.values()))
-            return tracking_armor
-        
-        # 按高度排序并取前两个条目
-        top_two_heighest_armor = sorted(filtered_color_data.items(), key=lambda item: item[1]["height"], reverse=True)[:2]
-        
-        # 检查 top_two_heighest_armor 中的 class_id
-        class_ids = [v['class_id'] for k, v in top_two_heighest_armor]
-        
-        # 如果存在 class_id 为 6
-        if 6 in class_ids:
-            # 如果两个都是 class_id 为 6, 则返回高度最大的
-            if class_ids.count(6) == 2:
-                return max(top_two_heighest_armor, key=lambda item: item[1]["height"])[1]  # 返回该字典的值
-            else:
-                # 返回 class_id 为 6 的第一个条目的值
-                return next((v for v in top_two_heighest_armor if v[1]['class_id'] == 6), None)[1]
-        else:
-            return max(top_two_heighest_armor, key=lambda item: item[1]["height"])[1]  # 返回该字典的值
 
+    # 最终筛选
+    if not filtered_color_data:
+        tracking_armor = {}
+    else:
+
+        # 找出 height 最大的条目
+        tracking_armor = max(filtered_color_data.items(), key=lambda item: item[1]["height"])[1]
+
+    return tracking_armor
 
 def pixel_to_angle_and_deep(height, center, vfov, pic_width):
 
@@ -97,14 +45,14 @@ def pixel_to_angle_and_deep(height, center, vfov, pic_width):
 if __name__ == "__main__":
 
     armors_dict = {
-        "179":  {"class_id": 0, "height": 290, "center": [ 1,  333]},
-        "-143": {"class_id": 1, "height": 288, "center": [-143, -35]},
-        "149":  {"class_id": 0, "height": 191, "center": [ 149,  36]},
-        "-113": {"class_id": 1, "height": 300, "center": [ 91, -35]},
+        "179":  {"class_id": 7, "height": 290, "center": [ 1,  333]},
+        "-143": {"class_id": 3, "height": 288, "center": [-143, -35]},
+        "149":  {"class_id": 3, "height": 191, "center": [ 149,  36]},
+        "-113": {"class_id": 2, "height": 300, "center": [ 91, -35]},
     }
 
     result = select_tracking_armor(armors_dict, 0)
-    if result:
-        yaw, pitch, deep = pixel_to_angle_and_deep(result["height"], result["center"], 55, 72)
+
+    yaw, pitch, deep = pixel_to_angle_and_deep(result, 72)
     
-        logger.info(f"yaw: {yaw:.2f}, pitch: {pitch:.2f}, deep: {deep:.2f}")
+    logger.info(f"yaw: {yaw:.2f}, pitch: {pitch:.2f}, deep: {deep:.2f}")
