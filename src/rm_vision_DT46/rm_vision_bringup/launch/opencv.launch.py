@@ -47,8 +47,8 @@ def generate_launch_description():
         
         # 启动 hik_camera_node
         Node(
-            package="hik_camera",
-            executable="hik_camera_node",
+            package="mindvision_camera",
+            executable="mindvision_camera_node",
             output="screen",
             emulate_tty=True,
             parameters=[
