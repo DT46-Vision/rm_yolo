@@ -50,10 +50,11 @@ class RMSerialDriver(Node):
 
     def get_params(self):
         """获取并设置串口相关的参数"""
-        self.device_name  = self.declare_parameter("device_name", "/dev/ttyUSB0").value
+        self.device_name  = self.declare_parameter("device_name", "/dev/ttyACM0").value
         self.baud_rate    = self.declare_parameter("baud_rate", 115200).value
         self.flow_control = self.declare_parameter("flow_control", "none").value
-        self.parity       = self.declare_parameter("parity", "none").value
+        self.parity       = self.declare_parameter("parity", "none")
+        .value
         self.stop_bits    = self.declare_parameter("stop_bits", "1").value
         
     def receive_data(self):
