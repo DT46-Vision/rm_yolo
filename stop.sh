@@ -1,6 +1,7 @@
 #!/bin/bash
 
 sudo systemctl stop yolo.service
+sudo systemctl stop nav.service
 
 export ROS_HOSTNAME=$(hostname)
 export ROS_HOME=${ROS_HOME:=$HOME_DIR/.ros}

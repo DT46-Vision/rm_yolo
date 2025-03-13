@@ -8,11 +8,11 @@ from launch_ros.actions import Node
 def generate_launch_description():
     # 获取参数文件路径
     params_file = os.path.join(
-        get_package_share_directory("hik_camera"), "config", "camera_params.yaml"
-    )
+        get_package_share_directory('hik_camera'), 'config', 'camera_params.yaml')
+
     
     # 相机信息URL
-    camera_info_url = "package://hik_camera/config/camera_info.yaml"
+    camera_info_url = 'package://hik_camera/config/camera_info.yaml'
 
     # 创建launch描述
     return LaunchDescription([
@@ -21,13 +21,13 @@ def generate_launch_description():
         DeclareLaunchArgument(name="camera_info_url", default_value=camera_info_url),
         DeclareLaunchArgument(name="use_sensor_data_qos", default_value="false"),
         
-        # 启动 rm_serial_node
-        Node(
-            package="rm_serial_python",
-            executable="rm_serial_node",
-            output="screen",
-            emulate_tty=True,
-        ),        
+        # # 启动 rm_serial_node
+        # Node(
+        #     package="rm_serial_python",
+        #     executable="rm_serial_node",
+        #     output="screen",
+        #     emulate_tty=True,
+        # ),        
 
         # 启动 armor_detector_cv_node
         Node(
@@ -47,16 +47,13 @@ def generate_launch_description():
         
         # 启动 hik_camera_node
         Node(
-            package="hik_camera",
-            executable="hik_camera_node",
-            output="screen",
+            package='hik_camera',
+            executable='hik_camera_node',
+            output='screen',
             emulate_tty=True,
-            parameters=[
-                LaunchConfiguration("params_file"),
-                {
-                    "camera_info_url": LaunchConfiguration("camera_info_url"),
-                    "use_sensor_data_qos": LaunchConfiguration("use_sensor_data_qos"),
-                },
-            ],
-        ),
+            parameters=[LaunchConfiguration('params_file'), {
+                'camera_info_url': LaunchConfiguration('camera_info_url'),
+                'use_sensor_data_qos': LaunchConfiguration('use_sensor_data_qos'),
+            }],
+        )
     ])

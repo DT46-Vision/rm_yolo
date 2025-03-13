@@ -1,4 +1,5 @@
 Camera/
+MvSdkLog/
 
 __pycache__/
 devel/
@@ -6,7 +7,6 @@ logs/
 build/
 install/
 bin/
-lib/
 msg_gen/
 srv_gen/
 msg/*Action.msg
