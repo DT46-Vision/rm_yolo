@@ -46,6 +46,15 @@ public:
     auto qos = use_sensor_data_qos ? rmw_qos_profile_sensor_data : rmw_qos_profile_default;
     camera_pub_ = image_transport::create_camera_publisher(this, "image_raw", qos);
 
+    rclcpp::sleep_for(std::chrono::seconds(5));  // 休眠 n 秒
+
+    // 确保在调用 MV_CC_GetFloatValue 获取曝光时间范围之前，相机已正确初始化并打开：
+    nRet = MV_CC_OpenDevice(camera_handle_);
+    if (nRet != MV_OK) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to open camera: [%x]", nRet);
+        return;
+    }
+
     declareParameters();
 
     MV_CC_StartGrabbing(camera_handle_);
@@ -129,6 +138,7 @@ private:
   {
     rcl_interfaces::msg::ParameterDescriptor param_desc;
     MVCC_FLOATVALUE f_value;
+    RCLCPP_INFO(this->get_logger(), "Exposure time range: [%f, %f]", f_value.fMin, f_value.fMax);
     param_desc.integer_range.resize(1);
     param_desc.integer_range[0].step = 1;
     // Exposure time
