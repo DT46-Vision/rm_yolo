@@ -69,8 +69,8 @@ class RMSerialDriver(Node):
                 serial_receive_msg.header = Header()  # 创建并设置Header
                 serial_receive_msg.header.frame_id = 'serial_receive_frame'  # 可根据需要设置frame_id
                 serial_receive_msg.header.stamp = self.get_clock().now().to_msg()  # 设置时间戳
-                serial_receive_msg.tracking_color = -1  # 重置为 -1
-                serial_receive_msg.data = "test text"
+                serial_receive_msg.tracking_color = -1    # 重置为 -1
+                serial_receive_msg.data = "未收到任何数据"  # 重置
 
                 # 读取数据头部
                 header = self.serial_port.read(1)
@@ -97,7 +97,7 @@ class RMSerialDriver(Node):
                         serial_receive_msg.tracking_color = detect_color
                             
                     else:
-                        self.get_logger().warn("Received data length mismatch")
+                        self.get_logger().warn("Received data 长度不匹配， 无法解包")
                 else:
                     self.get_logger().warn("Invalid header received, 没有数据")
                 
