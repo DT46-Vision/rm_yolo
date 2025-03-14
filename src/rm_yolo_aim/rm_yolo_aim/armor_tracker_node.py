@@ -82,7 +82,9 @@ class ArmorTrackerNode(Node):
 
             # 选择要跟踪的装甲板
             self.tracking_armor = select_tracking_armor(armors_dict, self.tracking_color)  # 0表示红色
-            self.get_logger().info(f"得到需要 追踪 的装甲板 {self.tracking_armor}")
+            
+            color_str = '红色' if (self.tracking_color == 0) else "蓝色"
+            self.get_logger().info(f"得到需要 追踪 的 {color_str} 装甲板 {self.tracking_armor}")
             
             if not self.tracking_armor:  # 检查 tracking_armor 是否为空
                 logger.info("tracking_armor is empty, returning default values.")

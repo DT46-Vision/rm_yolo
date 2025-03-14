@@ -15,7 +15,7 @@ def select_tracking_armor(armors_dict, color):
         filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] < 6}
     elif color == 0:
         filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] > 5}
-
+        
     # 最终筛选
     if not filtered_color_data:
         tracking_armor = {}
@@ -53,6 +53,6 @@ if __name__ == "__main__":
 
     result = select_tracking_armor(armors_dict, 0)
 
-    yaw, pitch, deep = pixel_to_angle_and_deep(result, 72)
+    yaw, pitch, deep = pixel_to_angle_and_deep(result["height"], result["center"], 72, 1080)
     
     logger.info(f"yaw: {yaw:.2f}, pitch: {pitch:.2f}, deep: {deep:.2f}")
