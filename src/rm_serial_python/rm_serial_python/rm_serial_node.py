@@ -26,10 +26,10 @@ class RMSerialDriver(Node):
         )
 
         # 创建发布者
-        self.pub_uart_receive = self.create_publisher(String, "/uart/receive", 10)
+        self.pub_uart_receive = self.create_publisher(SerialReceive, "/serial/receive", 10)
         
         # 创建变量
-        self.tracking_color = 0
+        self.tracking_color = -1
         
         # 初始化串口
         try:
@@ -43,6 +43,8 @@ class RMSerialDriver(Node):
                 self.get_logger().info("创建串口 successfully.")
                 self.receive_thread = threading.Thread(target=self.receive_data)
                 self.receive_thread.start()
+                # self.timer = self.create_timer(1.0, self.receive_data_callback)  #有 bug 弃用
+
 
         except serial.SerialException as e:
             self.get_logger().error(f"创建串口时出错: {self.device_name} - {str(e)}")
@@ -50,7 +52,7 @@ class RMSerialDriver(Node):
 
     def get_params(self):
         """获取并设置串口相关的参数"""
-        self.device_name  = self.declare_parameter("device_name", "/dev/ttyCH343USB0").value
+        self.device_name  = self.declare_parameter("device_name", "/dev/ttyACM0").value
         self.baud_rate    = self.declare_parameter("baud_rate", 115200).value
         self.flow_control = self.declare_parameter("flow_control", "none").value
         self.parity       = self.declare_parameter("parity", "none").value
@@ -65,33 +67,44 @@ class RMSerialDriver(Node):
             try:         
                 serial_receive_msg = SerialReceive()  # 创建并设置消息
                 serial_receive_msg.header = Header()  # 创建并设置Header
-                serial_receive_msg.header.stamp = self.get_clock().now().to_msg()  # 设置时间戳
                 serial_receive_msg.header.frame_id = 'serial_receive_frame'  # 可根据需要设置frame_id
-                                
-                # 读取数据头部
-                header = self.serial_port.read(1)
-                if header and header[0] == 0x5A:
-                    data = self.serial_port.read(16)  # 读取16字节的数据
+                serial_receive_msg.header.stamp = self.get_clock().now().to_msg()  # 设置时间戳
+                serial_receive_msg.tracking_color = -1  # 重置为 -1
+                serial_receive_msg.data = "test text"
 
-                    if len(data) == 16:
-                        packet = struct.unpack("<B?fffH", header + data)  # 注意这里的格式字符串
-
-                        self.get_logger().info(f"解包收到的数据: {packet}")
+                self.pub_uart_receive.publish(serial_receive_msg)
+                self.get_logger().warn(f'Publishing: {serial_receive_msg.data}， tracking_color： {serial_receive_msg.tracking_color}')
+                # # 读取数据头部
+                # header = self.serial_port.read(1)
+                #  # 如果头部存在且等于0x5A
+                # if header and header[0] == 0x5A:
+                #     data = ser.read(16)  # 读取16字节的数据
+                    
+                #     if len(data) == 16:
+                #         # 定义数据解包格式
+                #         format_string = '>B B f f f H'
                         
-                        serial_receive_msg.data = packet  # 给ros消息装入数据
+                #         # 解包数据
+                #         unpacked_data = struct.unpack(format_string, data)
 
-                        # 更新目标颜色参数
-                        if packet[1] != self.tracking_color:
-                            self.tracking_color = packet[1]
-                            # 更新颜色
-                            serial_receive_msg.tracking_color = self.tracking_color
+                #         # 提取各个字段
+                #         detect_color = unpacked_data[1] & 0x01  # 只取最低位
+
+                #         self.get_logger().info(f"解包收到的数据: {data}")
+                        
+                #         serial_receive_msg.data = str(data)  # 给ros消息装入数据
+
+                #         # 更新目标颜色参数
+                #         self.tracking_color = detect_color  # 更新颜色
+                #         serial_receive_msg.tracking_color = detect_color
                             
-                            # 发送ROS消息
-                            self.pub_uart_receive.publish(serial_receive_msg)
-                    else:
-                        self.get_logger().warn("Received data length mismatch")
-                else:
-                    self.get_logger().warn("Invalid header received, 没有数据")
+                #     else:
+                #         self.get_logger().warn("Received data length mismatch")
+                # else:
+                #     self.get_logger().warn("Invalid header received, 没有数据")
+                
+                # # 发送ROS消息
+                # self.pub_uart_receive.publish(serial_receive_msg)
 
 
             except serial.SerialException as e:
@@ -101,7 +114,7 @@ class RMSerialDriver(Node):
     def send_data(self, msg):
         """处理目标信息并通过串口发送"""
         try:
-            # 目标ID对应的装甲板, 暂时不用
+            # 目标ID对应的装甲板, 此列表无实际作用， 放在这里方便查看
             id_map =   ["B1", "B2", "B3", "B4", "B5", "B7", 
                         "R1", "R2", "R3", "R4", "R5", "R7"]
             
@@ -112,7 +125,7 @@ class RMSerialDriver(Node):
             pitch  = msg.pitch
             deep   = msg.deep
 
-            print(f"yaw type: {yaw}, pitch type: {pitch}, deep type: {deep}")
+            # self.get_logger().info(f"yaw type: {yaw}, pitch type: {pitch}, deep type: {deep}")
 
             packet = struct.pack(
                 "<Bfff",
@@ -160,19 +173,4 @@ def main(args=None):  # ROS2节点主入口main函数
 if __name__ == "__main__":
     main()
 
-# def main(args=None):
-#     rclpy.init(args=args)
-#     rm_serial_driver = RMSerialDriver()
 
-#     executor = MultiThreadedExecutor()
-#     executor.add_node(rm_serial_driver)
-
-#     try:
-#         executor.spin()
-#     finally:
-#         rm_serial_driver.destroy_node()
-#         rclpy.shutdown()
-
-
-# if __name__ == '__main__':
-#     main()

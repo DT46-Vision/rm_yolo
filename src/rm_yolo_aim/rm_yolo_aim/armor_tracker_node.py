@@ -35,7 +35,7 @@ class ArmorTrackerNode(Node):
             Image, 'image_raw', self.listener_callback_cam, 10)
 
         self.sub_serial = self.create_subscription(
-            String, '/uart/receive', self.listener_callback_serial, 10)  # 订阅串口数据
+            String, '/serial/receive', self.listener_callback_serial, 10)  # 订阅串口数据
 
         self.pic_width = 1024       # 随便初始化一个图像宽度
         self.center_last = (0, 0)   # 默认初始化中心点坐标为(0, 0)
@@ -116,7 +116,9 @@ class ArmorTrackerNode(Node):
                     self.kf_h.update(self.height_last)            
                     self.center_last = (self.kf_cx.get_state(), self.kf_cy.get_state())  # 获取预测的状态
                     self.height_last = self.kf_h.get_state()
+
                     print(f"预测的 cx: {self.center_last[0]}, cy: {self.center_last[1]}, h: {self.height_last}")
+
             yaw, pitch, deep = pixel_to_angle_and_deep(self.height_last, self.center_last, 72, self.pic_width) 
 
             # 将装甲板信息字典转换为msg消息定义的格式
@@ -133,7 +135,8 @@ class ArmorTrackerNode(Node):
             tracking_armor_msg.yaw   = float(yaw)
             tracking_armor_msg.pitch = float(pitch)
             tracking_armor_msg.deep  = float(deep)
-            print(tracking_armor_msg)
+
+            self.get_logger().info(f"发布的 tracking_armor_msg: {tracking_armor_msg}")
 
             # 发布消息
             self.pub_tracker.publish(tracking_armor_msg)
@@ -144,11 +147,10 @@ class ArmorTrackerNode(Node):
 
     def listener_callback_serial(self, msg):
         # 获取串口数据
-        serial_data = msg.data
-        self.get_logger().info(f'Received serial data: {serial_data}')
+        self.get_logger().info(f'Received serial node data: {msg.data}')
 
         # 这里可以对串口数据进行进一步处理
-        if self.tracking_color != msg.tracking_color:
+        if msg.tracking_color != -1:
             self.tracking_color = msg.tracking_color
 
 def main(args=None):                              # ROS2节点主入口main函数
