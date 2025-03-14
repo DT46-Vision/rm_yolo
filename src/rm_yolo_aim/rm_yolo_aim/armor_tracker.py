@@ -7,6 +7,9 @@ DEG2RAD = math.pi / 180
 
 def select_tracking_armor(armors_dict, color):
 
+    if color == -1:
+        return {}
+    
     # 筛选垂直方向的长度大于20像素的装甲板
     filtered_height_data = {k: v for k, v in armors_dict.items() if v["height"] > 20}
 
@@ -20,7 +23,6 @@ def select_tracking_armor(armors_dict, color):
     if not filtered_color_data:
         tracking_armor = {}
     else:
-
         # 找出 height 最大的条目
         tracking_armor = max(filtered_color_data.items(), key=lambda item: item[1]["height"])[1]
 
