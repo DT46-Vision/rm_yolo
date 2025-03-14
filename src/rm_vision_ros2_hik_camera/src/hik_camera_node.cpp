@@ -49,11 +49,11 @@ public:
     rclcpp::sleep_for(std::chrono::seconds(5));  // 休眠 n 秒
 
     // 确保在调用 MV_CC_GetFloatValue 获取曝光时间范围之前，相机已正确初始化并打开：
-    nRet = MV_CC_OpenDevice(camera_handle_);
-    if (nRet != MV_OK) {
-        RCLCPP_ERROR(this->get_logger(), "Failed to open camera: [%x]", nRet);
-        return;
-    }
+    // nRet = MV_CC_OpenDevice(camera_handle_);
+    // if (nRet != MV_OK) {
+    //     RCLCPP_ERROR(this->get_logger(), "Failed to open camera: [%x]", nRet);
+    //     return;
+    // }
 
     declareParameters();
 
