@@ -152,6 +152,7 @@ class ArmorTrackerNode(Node):
         # 这里可以对串口数据进行进一步处理
         if self.tracking_color != msg.color:
             self.tracking_color = msg.color
+            self.get_logger().warn(f'颜色改变为 {self.tracking_color} 号颜色')
 
 def main(args=None):                              # ROS2节点主入口main函数
     rclpy.init(args=args)      # ROS2 Python接口初始化               
