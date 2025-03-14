@@ -82,7 +82,9 @@ class ArmorTrackerNode(Node):
 
             # 选择要跟踪的装甲板
             self.tracking_armor = select_tracking_armor(armors_dict, self.tracking_color)  # 0表示红色
-            self.get_logger().info(f"得到需要 追踪 的装甲板 {self.tracking_armor}")
+            
+            color_str = '红色' if (self.tracking_color == 0) else "蓝色"
+            self.get_logger().info(f"得到需要 追踪 的 {color_str} 装甲板 {self.tracking_armor}")
             
             if not self.tracking_armor:  # 检查 tracking_armor 是否为空
                 logger.info("tracking_armor is empty, returning default values.")
@@ -114,7 +116,9 @@ class ArmorTrackerNode(Node):
                     self.kf_h.update(self.height_last)            
                     self.center_last = (self.kf_cx.get_state(), self.kf_cy.get_state())  # 获取预测的状态
                     self.height_last = self.kf_h.get_state()
+
                     print(f"预测的 cx: {self.center_last[0]}, cy: {self.center_last[1]}, h: {self.height_last}")
+
             yaw, pitch, deep = pixel_to_angle_and_deep(self.height_last, self.center_last, 72, self.pic_width) 
 
             # 将装甲板信息字典转换为msg消息定义的格式
@@ -131,7 +135,8 @@ class ArmorTrackerNode(Node):
             tracking_armor_msg.yaw   = float(yaw)
             tracking_armor_msg.pitch = float(pitch)
             tracking_armor_msg.deep  = float(deep)
-            print(tracking_armor_msg)
+
+            self.get_logger().info(f"发布的 tracking_armor_msg: {tracking_armor_msg}")
 
             # 发布消息
             self.pub_tracker.publish(tracking_armor_msg)
@@ -142,11 +147,10 @@ class ArmorTrackerNode(Node):
 
     def listener_callback_serial(self, msg):
         # 获取串口数据
-        serial_data = msg.data
-        self.get_logger().info(f'Received serial data: {serial_data}')
+        self.get_logger().info(f'Received serial node data: {msg.data}')
 
         # 这里可以对串口数据进行进一步处理
-        if self.tracking_color != msg.tracking_color:
+        if msg.tracking_color != -1:
             self.tracking_color = msg.tracking_color
 
 def main(args=None):                              # ROS2节点主入口main函数
