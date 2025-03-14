@@ -35,7 +35,7 @@ class ArmorTrackerNode(Node):
             Image, 'image_raw', self.listener_callback_cam, 10)
 
         self.sub_serial = self.create_subscription(
-            SerialReceive, '/serial/receive', self.listener_callback_serial, 10)  # 订阅串口数据
+            SerialReceive, '/uart/receive', self.listener_callback_serial, 10)  # 订阅串口数据
 
         self.pic_width = 1024       # 随便初始化一个图像宽度
         self.center_last = (0, 0)   # 默认初始化中心点坐标为(0, 0)

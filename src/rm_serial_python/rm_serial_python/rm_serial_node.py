@@ -26,7 +26,7 @@ class RMSerialDriver(Node):
         )
 
         # 创建发布者
-        self.pub_uart_receive = self.create_publisher(SerialReceive, "/serial/receive", 10)
+        self.pub_uart_receive = self.create_publisher(SerialReceive, "/uart/receive", 10)
         
         # 创建变量
         self.tracking_color = -1
