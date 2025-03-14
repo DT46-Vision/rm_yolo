@@ -103,7 +103,7 @@ if __name__ == "__main__":
         "-113": {"class_id": 1, "height": 300, "center": [ 91, -35]},
     }
 
-    result = select_tracking_armor(armors_dict, 0)
+    result = select_tracking_armor(armors_dict, 1)
     if result:
         yaw, pitch, deep = pixel_to_angle_and_deep(result["height"], result["center"], 55, 72)
     

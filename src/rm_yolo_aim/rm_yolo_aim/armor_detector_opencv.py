@@ -174,13 +174,17 @@ class ArmorDetector:  # 定义检测器类
                     roi[0, i] = self.img[current_y, current_x]  # 保存像素值
 
             sum_r, sum_b = np.sum(roi[:, :, 2]), np.sum(roi[:, :, 0])  # 计算红色和蓝色的总和
+
             if self.color in [1, 2] and sum_b > sum_r:  # 根据模式识别颜色
                 light_blue = Light(up, down, rect[2], 1)  # 创建蓝色灯条对象
                 lights.append(light_blue)  # 添加蓝色灯条
+
             if self.color in [0, 2] and sum_r > sum_b:  # 根据模式识别颜色
                 light_red = Light(up, down, rect[2], 0)  # 创建红色灯条对象
                 lights.append(light_red)  # 添加红色灯条
+
         self.lights = lights
+
         return self.lights
 
 
@@ -264,7 +268,7 @@ class ArmorDetector:  # 定义检测器类
 
     def draw_lights(self, img):  # 绘制灯条的函数
             for light in self.lights:  # 遍历灯条
-            # 绘制直线
+                # 绘制直线
                 cv2.line(img, light.up, light.down, self.light_color[light.color], 1) 
                 # 绘制中心点
                 cv2.circle(img, (light.cx, light.cy), 1, self.light_dot[light.color], -1)  # 5是半径，-1表示填充
