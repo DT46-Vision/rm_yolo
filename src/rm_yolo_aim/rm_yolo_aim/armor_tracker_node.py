@@ -4,7 +4,7 @@ import rclpy                            # ROS2 Python接口库
 from rclpy.node import Node             # ROS2 节点类
 from std_msgs.msg import String, Header # 字符串消息类型和头部消息类型
 from sensor_msgs.msg import Image       # 图像消息类型
-from rm_interfaces.msg import ArmorsMsg, ArmorTracking  # 导入自定义消息类型
+from rm_interfaces.msg import ArmorsMsg, ArmorTracking, SerialReceive  # 导入自定义消息类型
 from rm_yolo_aim.armor_tracker import select_tracking_armor, pixel_to_angle_and_deep
 from rcl_interfaces.msg import SetParametersResult  # 导入 SetParametersResult 消息类型
 from rm_yolo_aim.Kalman import KalmanFilter
@@ -35,7 +35,7 @@ class ArmorTrackerNode(Node):
             Image, 'image_raw', self.listener_callback_cam, 10)
 
         self.sub_serial = self.create_subscription(
-            String, '/serial/receive', self.listener_callback_serial, 10)  # 订阅串口数据
+            SerialReceive, '/serial/receive', self.listener_callback_serial, 10)  # 订阅串口数据
 
         self.pic_width = 1024       # 随便初始化一个图像宽度
         self.center_last = (0, 0)   # 默认初始化中心点坐标为(0, 0)

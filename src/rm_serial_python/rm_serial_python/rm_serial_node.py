@@ -62,7 +62,7 @@ class RMSerialDriver(Node):
         """接收串口数据并处理"""
         while rclpy.ok():
 
-            time.sleep(1) # 1秒接受一次串口数据
+            # time.sleep(1) # 1秒接受一次串口数据
             
             try:         
                 serial_receive_msg = SerialReceive()  # 创建并设置消息
@@ -72,39 +72,38 @@ class RMSerialDriver(Node):
                 serial_receive_msg.tracking_color = -1  # 重置为 -1
                 serial_receive_msg.data = "test text"
 
-                self.pub_uart_receive.publish(serial_receive_msg)
-                self.get_logger().warn(f'Publishing: {serial_receive_msg.data}， tracking_color： {serial_receive_msg.tracking_color}')
-                # # 读取数据头部
-                # header = self.serial_port.read(1)
-                #  # 如果头部存在且等于0x5A
-                # if header and header[0] == 0x5A:
-                #     data = ser.read(16)  # 读取16字节的数据
+                # 读取数据头部
+                header = self.serial_port.read(1)
+                 # 如果头部存在且等于0x5A
+                if header and header[0] == 0x5A:
+                    data = ser.read(16)  # 读取16字节的数据
                     
-                #     if len(data) == 16:
-                #         # 定义数据解包格式
-                #         format_string = '>B B f f f H'
+                    if len(data) == 16:
+                        # 定义数据解包格式
+                        format_string = '>B B f f f H'
                         
-                #         # 解包数据
-                #         unpacked_data = struct.unpack(format_string, data)
+                        # 解包数据
+                        unpacked_data = struct.unpack(format_string, data)
 
-                #         # 提取各个字段
-                #         detect_color = unpacked_data[1] & 0x01  # 只取最低位
+                        # 提取各个字段
+                        detect_color = unpacked_data[1] & 0x01  # 只取最低位
 
-                #         self.get_logger().info(f"解包收到的数据: {data}")
+                        self.get_logger().info(f"解包收到的数据: {data}")
                         
-                #         serial_receive_msg.data = str(data)  # 给ros消息装入数据
+                        serial_receive_msg.data = str(data)  # 给ros消息装入数据
 
-                #         # 更新目标颜色参数
-                #         self.tracking_color = detect_color  # 更新颜色
-                #         serial_receive_msg.tracking_color = detect_color
+                        # 更新目标颜色参数
+                        self.tracking_color = detect_color  # 更新颜色
+                        serial_receive_msg.tracking_color = detect_color
                             
-                #     else:
-                #         self.get_logger().warn("Received data length mismatch")
-                # else:
-                #     self.get_logger().warn("Invalid header received, 没有数据")
+                    else:
+                        self.get_logger().warn("Received data length mismatch")
+                else:
+                    self.get_logger().warn("Invalid header received, 没有数据")
                 
                 # # 发送ROS消息
-                # self.pub_uart_receive.publish(serial_receive_msg)
+                self.pub_uart_receive.publish(serial_receive_msg)
+                self.get_logger().warn(f'Publishing: {serial_receive_msg.data}， tracking_color： {serial_receive_msg.tracking_color}')
 
 
             except serial.SerialException as e:
