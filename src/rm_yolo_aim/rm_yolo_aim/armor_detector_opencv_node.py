@@ -12,7 +12,7 @@ from rm_interfaces.msg import ArmorsMsg  # 导入自定义消息类型
 import time
 
 # 模式参数字典
-detect_color =  0  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
+detect_color =  2  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
 display_mode = 0 # 显示模式 None: 不显示, Binary: 显示二值化图, All: 显示二值化图和结果图像
 
 # 图像参数字典
