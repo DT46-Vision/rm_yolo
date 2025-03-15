@@ -5,7 +5,7 @@ from loguru import logger
 RAD2DEG = 180 / math.pi
 DEG2RAD = math.pi / 180
 
-def select_tracking_armor(filtered_color_data, color):
+def select_tracking_armor(filtered_height_data, color):
 
     # logger.info(f"armors_dict: {armors_dict}")
     
@@ -18,8 +18,8 @@ def select_tracking_armor(filtered_color_data, color):
     elif color == 0:
         filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] > 5}
     else:
-        tracking_armor = {} # 颜色输入不合法就返回空
-
+        return {} # 颜色输入不合法就返回空
+        
     # 最终筛选
     if not filtered_color_data:
         tracking_armor = {}
