@@ -17,7 +17,9 @@ def select_tracking_armor(armors_dict, color):
         filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] < 6}
     elif color == 0:
         filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] > 5}
-        
+    else:
+        tracking_armor = {} # 颜色输入不合法就返回空
+
     # 最终筛选
     if not filtered_color_data:
         tracking_armor = {}
