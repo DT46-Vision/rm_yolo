@@ -4,7 +4,7 @@ import rclpy                            # ROS2 Python接口库
 from rclpy.node import Node             # ROS2 节点类
 from std_msgs.msg import String, Header # 字符串消息类型和头部消息类型
 from sensor_msgs.msg import Image       # 图像消息类型
-from rm_interfaces.msg import ArmorsMsg, ArmorTracking, SerialReceive  # 导入自定义消息类型
+from rm_interfaces.msg import ArmorsMsg, ArmorTracking ,Decision  # 导入自定义消息类型
 from rm_yolo_aim.armor_tracker import select_tracking_armor, pixel_to_angle_and_deep
 from rcl_interfaces.msg import SetParametersResult  # 导入 SetParametersResult 消息类型
 from rm_yolo_aim.Kalman import KalmanFilter
@@ -35,7 +35,7 @@ class ArmorTrackerNode(Node):
             Image, 'image_raw', self.listener_callback_cam, 10)
 
         self.sub_serial = self.create_subscription(
-            SerialReceive, '/uart/receive', self.listener_callback_serial, 10)  # 订阅串口数据
+            Decision, '/nav/decision', self.listener_callback_serial, 10)  # 订阅串口数据
 
         self.pic_width = 1024       # 随便初始化一个图像宽度
         self.center_last = (0, 0)   # 默认初始化中心点坐标为(0, 0)
@@ -146,12 +146,13 @@ class ArmorTrackerNode(Node):
 
 
     def listener_callback_serial(self, msg):
-        # 获取串口数据
-        self.get_logger().info(f'Received serial node data: {msg.data}')
+        # 获取 Decision 数据
+        # self.get_logger().info(f'Received Decision data: {msg}')
 
         # 这里可以对串口数据进行进一步处理
-        if msg.tracking_color != -1:
-            self.tracking_color = msg.tracking_color
+        if self.tracking_color != msg.color:
+            self.tracking_color = msg.color
+            self.get_logger().warn(f'颜色改变为 {self.tracking_color} 号颜色')
 
 def main(args=None):                              # ROS2节点主入口main函数
     rclpy.init(args=args)      # ROS2 Python接口初始化               

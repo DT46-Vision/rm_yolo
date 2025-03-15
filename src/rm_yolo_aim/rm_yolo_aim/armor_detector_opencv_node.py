@@ -12,10 +12,11 @@ from rm_interfaces.msg import ArmorsMsg  # 导入自定义消息类型
 import time
 
 # 模式参数字典
-detect_color =  0  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
+detect_color =  2  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
 display_mode = 0 # 显示模式 None: 不显示, Binary: 显示二值化图, All: 显示二值化图和结果图像
+
 # 图像参数字典
-binary_val = 50  
+binary_val = 64  
 light_params = {
     "light_area_min": 5,  # 最小灯条面积
     "light_angle_min": -45,  # 最小灯条角度
@@ -26,14 +27,15 @@ light_params = {
     "cy_tol": 7,  # 中心点的y轴容差
     "height_multiplier": 2.0 
 }
+
 # 颜色参数字典
 color_params = {
     "armor_color": {1: (255, 255, 0), 0: (128, 0, 128)},  # 装甲板颜色映射
     "light_color": {1: (200, 71, 90), 0: (0, 100, 255)},  # 灯条颜色映射
     "light_dot": {1: (0, 0, 255), 0: (255, 0, 0)}  # 灯条中心点颜色映射
 }
-detector = ArmorDetector(detect_color, display_mode, binary_val, light_params, color_params)  # 创建检测器对象
 
+detector = ArmorDetector(detect_color, display_mode, binary_val, light_params, color_params)  # 创建检测器对象
 
 def time_diff(last_time=[None]):
     """计算两次调用之间的时间差，单位为纳秒。"""
@@ -57,7 +59,6 @@ def time_logger(func):  # 定义装饰器
         print(f"函数 '{func.__name__}' 的运行时间: {dt/1e6} ms, fps: {1/(dt/1e9)} ")  # 打印运行时间
         return result  # 返回原函数的结果
     return wrapper
-
 
 
 class ArmorDetectorNode(Node):
