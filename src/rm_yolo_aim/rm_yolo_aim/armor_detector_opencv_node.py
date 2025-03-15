@@ -15,8 +15,6 @@ import time
 detect_color =  2  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
 display_mode = 0 # 显示模式 None: 不显示, Binary: 显示二值化图, All: 显示二值化图和结果图像
 
-# 图像参数字典
-binary_val = 64  
 binary_val_blue = 40
 binary_val_red = 64
 light_params = {
@@ -38,7 +36,7 @@ color_params = {
     "light_dot": {1: (0, 0, 255), 0: (255, 0, 0)}  # 灯条中心点颜色映射
 }
 
-detector = ArmorDetector(detect_color, display_mode, binary_val, light_params, color_params)  # 创建检测器对象
+detector = ArmorDetector(detect_color, display_mode, binary_val_red, light_params, color_params)  # 创建检测器对象
 
 def time_diff(last_time=[None]):
     """计算两次调用之间的时间差，单位为纳秒。"""
