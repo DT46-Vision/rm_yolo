@@ -8,7 +8,7 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String, Header  # 字符串消息类型和头部消息类型
-from rm_interfaces.msg import ArmorTracking ,SerialReceive # 导入自定义消息类型
+from rm_interfaces.msg import ArmorTracking ,SerialReceive, Decision # 导入自定义消息类型
 
 
 class RMSerialDriver(Node):
@@ -26,7 +26,7 @@ class RMSerialDriver(Node):
         )
 
         # 创建发布者
-        self.pub_uart_receive = self.create_publisher(SerialReceive, "/uart/receive", 10)
+        self.pub_uart_receive = self.create_publisher(Decision, "/nav/decision", 10)
         
         # 创建变量
         self.tracking_color = -1
@@ -76,11 +76,11 @@ class RMSerialDriver(Node):
                 header = self.serial_port.read(1)
                  # 如果头部存在且等于0x5A
                 if header and header[0] == 0x5A:
-                    data = ser.read(16)  # 读取16字节的数据
+                    data = self.serial_port.read(2)  # 读取2字节的数据
                     
-                    if len(data) == 16:
+                    if len(data) == 2:
                         # 定义数据解包格式
-                        format_string = '>B B f f f H'
+                        format_string = '>BB'
                         
                         # 解包数据
                         unpacked_data = struct.unpack(format_string, data)
@@ -89,12 +89,10 @@ class RMSerialDriver(Node):
                         detect_color = unpacked_data[1] & 0x01  # 只取最低位
 
                         self.get_logger().info(f"解包收到的数据: {data}")
-                        
-                        serial_receive_msg.data = str(data)  # 给ros消息装入数据
 
                         # 更新目标颜色参数
                         self.tracking_color = detect_color  # 更新颜色
-                        serial_receive_msg.tracking_color = detect_color
+                        serial_receive_msg.color = detect_color
                             
                     else:
                         self.get_logger().warn("Received data 长度不匹配， 无法解包")
@@ -103,7 +101,7 @@ class RMSerialDriver(Node):
                 
                 # # 发送ROS消息
                 self.pub_uart_receive.publish(serial_receive_msg)
-                self.get_logger().warn(f'Publishing: {serial_receive_msg.data}， tracking_color： {serial_receive_msg.tracking_color}')
+                self.get_logger().warn(f'Publishing: {serial_receive_msg}， tracking_color： {serial_receive_msg.tracking_color}')
 
 
             except serial.SerialException as e:
