@@ -34,7 +34,11 @@ def adjust(w_h, angle):  # 调整矩形的函数
             angle = angle - 90 # 调整角度，使其跟随高度
         elif angle < 0 :
             angle = angle + 90
-    return (w, h), angle  # 返回调整后的结果
+    if h/w >= 7.8 :
+        is_thin = True
+    else :
+        is_thin = False
+    return (w, h), angle, is_thin  # 返回调整后的结果
 
 
 def angle_to_slope(angle_degrees):
@@ -128,8 +132,8 @@ class ArmorDetector:  # 定义检测器类
         for contour in contours:
             if cv2.contourArea(contour) >= self.light_params["light_area_min"]:
                 center, w_h, angle = cv2.minAreaRect(contour)
-                w_h, angle = adjust(w_h, angle)
-                if angle >= self.light_params["light_angle_min"] and angle <= self.light_params["light_angle_max"] :
+                w_h, angle, is_thin = adjust(w_h, angle)
+                if angle >= self.light_params["light_angle_min"] and angle <= self.light_params["light_angle_max"] and is_thin :
                     rect = center, w_h, angle
                     is_lights.append(rect)
        
@@ -381,7 +385,8 @@ if __name__ == "__main__":  # 主程序入口
     }
     detector = ArmorDetector(detect_color, display_mode, binary_val, light_params, color_params)  # 创建检测器对象
     info = detector.detect_armor(cv2.imread('src/rm_yolo_aim/test/rb.jpeg'))  # 读取图像并进行检测
-    detector.display()  # 显示图像
+    img = detector.display()  # 显示图像
+    cv2.imread('result', img)
     logger.info(info) # 打印检测结果
     cv2.waitKey(0)  # 等待按键
     cv2.destroyAllWindows()  # 关闭所有窗口

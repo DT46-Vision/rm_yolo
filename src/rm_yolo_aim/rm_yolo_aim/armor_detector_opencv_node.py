@@ -11,8 +11,6 @@ from rm_yolo_aim.armor_detector_opencv import ArmorDetector
 from rm_interfaces.msg import ArmorsMsg, Decision  # 导入自定义消息类型
 import time
 
-tracking_color = -1
-
 # 模式参数字典
 detect_color =  2  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
 display_mode = 0 # 显示模式 None: 不显示, Binary: 显示二值化图, All: 显示二值化图和结果图像
@@ -80,6 +78,7 @@ class ArmorDetectorNode(Node):
         self.cv_bridge = CvBridge()                           # 创建图像转换对象
         self.cv_image = None
         self.camera_info = None
+        self.tracking_color = -1
 
         # 在节点初始化中声明参数
         for key, value in light_params.items():
@@ -112,13 +111,13 @@ class ArmorDetectorNode(Node):
         # self.get_logger().info(f'Received Decision data: {msg}')
 
         # 这里可以对串口数据进行进一步处理
-        if tracking_color != msg.color:
-            tracking_color = msg.color
+        if self.tracking_color != msg.color:
+            self.tracking_color = msg.color
 
-            if tracking_color == 0:
+            if self.tracking_color == 0:
                 detector.binary_val = binary_val_red
                 self.get_logger().warn(f'二值化阈值改变为 {detector.binary_val},颜色改变为红色')
-            elif tracking_color == 1:
+            elif self.tracking_color == 1:
                 self.tracking_color = binary_val_blue
                 self.get_logger().warn(f'二值化阈值改变为 {detector.binary_val},颜色改变为蓝色')
             else:
