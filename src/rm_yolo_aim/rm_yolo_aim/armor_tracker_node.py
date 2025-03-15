@@ -4,7 +4,7 @@ import rclpy                            # ROS2 Python接口库
 from rclpy.node import Node             # ROS2 节点类
 from std_msgs.msg import String, Header # 字符串消息类型和头部消息类型
 from sensor_msgs.msg import Image       # 图像消息类型
-from rm_interfaces.msg import ArmorsMsg, ArmorTracking ,Decision  # 导入自定义消息类型
+from rm_interfaces.msg import ArmorsMsg, ArmorTracking, Decision  # 导入自定义消息类型
 from rm_yolo_aim.armor_tracker import select_tracking_armor, pixel_to_angle_and_deep
 from rcl_interfaces.msg import SetParametersResult  # 导入 SetParametersResult 消息类型
 from rm_yolo_aim.Kalman import KalmanFilter
@@ -47,15 +47,17 @@ class ArmorTrackerNode(Node):
         self.kf_h = KalmanFilter()
 
         self.lost = 0               # 初始化丢失帧数
-        self.frame_add = 30         # 初始化补帧数
+        self.frame_add = 45         # 初始化补帧数
 
         self.pub_tracker = self.create_publisher(ArmorTracking, '/tracker/target', 10) # 创建发布者/tracker/target
 
         self.tracking_color = -1    # 1蓝色表示, 0表示红色, 现初始化为红色
+        self.follow_decision = 1
         self.tracking_armor = None # 初始化追踪装甲板为None
 
         self.declare_parameter('use_kf', self.use_kf)  # 声明 use_kf 参数
         self.declare_parameter('frame_add', self.frame_add)  # 声明 frame_add 参数
+        self.declare_parameter('follow_decision', self.follow_decision)  # 声明 frame_add 参数
         self.declare_parameter('tracking_color', self.tracking_color)  # 声明 detect_color 参数
         self.add_on_set_parameters_callback(self.param_callback)  # 添加参数回调
         self.get_logger().info('Armor Tracker Node has started.')
@@ -68,6 +70,8 @@ class ArmorTrackerNode(Node):
                 self.frame_add = param.value
             if param.name == 'tracking_color':
                 self.tracking_color = param.value
+            if param.name == 'follow_decision':
+                self.follow_decision = param.value
         return SetParametersResult(successful=True)  # 返回成功结果
 
     def listener_callback_cam(self, data):
@@ -163,9 +167,10 @@ class ArmorTrackerNode(Node):
         # self.get_logger().info(f'Received Decision data: {msg}')
 
         # 这里可以对串口数据进行进一步处理
-        if self.tracking_color != msg.color:
-            self.tracking_color = msg.color
-            self.get_logger().warn(f'颜色改变为 {self.tracking_color} 号颜色')
+        if self.follow_decision == 1:
+            if self.tracking_color != msg.color:
+                self.tracking_color = msg.color
+                self.get_logger().warn(f'颜色改变为 {self.tracking_color} 号颜色')
 
 def main(args=None):                              # ROS2节点主入口main函数
     rclpy.init(args=args)      # ROS2 Python接口初始化               
