@@ -26,7 +26,7 @@ def calculate_distance(point1, point2):
     return distance
 
 
-def adjust(w_h, angle):  # 调整矩形的函数
+def adjust(w_h, angle, hw):  # 调整矩形的函数
     (w, h) = w_h
     if w > h:  # 如果宽度大于高度
         w, h = h, w  # 交换宽度和高度
@@ -34,7 +34,7 @@ def adjust(w_h, angle):  # 调整矩形的函数
             angle = angle - 90 # 调整角度，使其跟随高度
         elif angle < 0 :
             angle = angle + 90
-    if h/w >= 7.8 :
+    if h/w >= hw :
         is_thin = True
     else :
         is_thin = False
@@ -132,7 +132,7 @@ class ArmorDetector:  # 定义检测器类
         for contour in contours:
             if cv2.contourArea(contour) >= self.light_params["light_area_min"]:
                 center, w_h, angle = cv2.minAreaRect(contour)
-                w_h, angle, is_thin = adjust(w_h, angle)
+                w_h, angle, is_thin = adjust(w_h, angle, self.light_params["hw"])
                 if angle >= self.light_params["light_angle_min"] and angle <= self.light_params["light_angle_max"] and is_thin :
                     rect = center, w_h, angle
                     is_lights.append(rect)
@@ -375,7 +375,8 @@ if __name__ == "__main__":  # 主程序入口
         "vertical_discretization": 0.3,  # 垂直离散
         "height_tol": 12,  # 高度容差
         "cy_tol": 5,  # 中心点的y轴容差
-        "height_multiplier": 3 
+        "height_multiplier": 3, 
+        "hw" : 7.2
     }
     # 颜色参数字典
     color_params = {
