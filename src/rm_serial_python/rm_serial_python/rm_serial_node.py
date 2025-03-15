@@ -8,7 +8,7 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String, Header  # 字符串消息类型和头部消息类型
-from rm_interfaces.msg import ArmorTracking ,SerialReceive, Decision # 导入自定义消息类型
+from rm_interfaces.msg import ArmorTracking , Decision # 导入自定义消息类型
 
 
 class RMSerialDriver(Node):
@@ -58,55 +58,57 @@ class RMSerialDriver(Node):
         self.parity       = self.declare_parameter("parity", "none").value
         self.stop_bits    = self.declare_parameter("stop_bits", "1").value
         
+
     def receive_data(self):
         """接收串口数据并处理"""
-        while rclpy.ok():
+        serial_receive_msg = Decision()
+        serial_receive_msg.header.frame_id = 'serial_receive_frame'
+        serial_receive_msg.header = Header()
+        serial_receive_msg.header.stamp = self.get_clock().now().to_msg()
+        serial_receive_msg.color = -1  # 初始化颜色为-1
+        self.pub_uart_receive.publish(serial_receive_msg)  # 发布初始化的消息
 
-            # time.sleep(1) # 1秒接受一次串口数据
-            
-            try:         
-                serial_receive_msg = SerialReceive()  # 创建并设置消息
-                serial_receive_msg.header = Header()  # 创建并设置Header
-                serial_receive_msg.header.frame_id = 'serial_receive_frame'  # 可根据需要设置frame_id
-                serial_receive_msg.header.stamp = self.get_clock().now().to_msg()  # 设置时间戳
-                serial_receive_msg.tracking_color = -1    # 重置为 -1
-                serial_receive_msg.data = "未收到任何数据"  # 重置
+        while rclpy.ok():
+            time.sleep(1)  # 控制循环频率
+            try:
+                # 更新消息头部
+                serial_receive_msg.header.stamp = self.get_clock().now().to_msg()
 
                 # 读取数据头部
                 header = self.serial_port.read(1)
-                 # 如果头部存在且等于0x5A
-                if header and header[0] == 0x5A:
-                    data = self.serial_port.read(2)  # 读取2字节的数据
-                    
-                    if len(data) == 2:
-                        # 定义数据解包格式
-                        format_string = '>BB'
-                        
-                        # 解包数据
-                        unpacked_data = struct.unpack(format_string, data)
+                if not header or len(header) != 1:
+                    self.get_logger().warn("Header 读取失败或长度不匹配")
+                    continue
 
-                        # 提取各个字段
-                        detect_color = unpacked_data[1] & 0x01  # 只取最低位
+                # 如果头部存在且等于 0xA5
+                if header[0] == 0xA5:
+                    # 读取颜色信息字节
+                    color_byte = self.serial_port.read(1)
+                    if not color_byte or len(color_byte) != 1:
+                        self.get_logger().warn("颜色信息读取失败或长度不匹配")
+                        continue
 
-                        self.get_logger().info(f"解包收到的数据: {data}")
+                    # 解包颜色信息
+                    raw_color = struct.unpack('>B', color_byte)[0]
+                    detect_color = raw_color  # 提取最低有效位
 
-                        # 更新目标颜色参数
-                        self.tracking_color = detect_color  # 更新颜色
-                        serial_receive_msg.color = detect_color
-                            
-                    else:
-                        self.get_logger().warn("Received data 长度不匹配， 无法解包")
+                    self.get_logger().info(f"解包收到的数据: detect_color: {detect_color}")
+
+                    # 更新目标颜色参数
+                    self.tracking_color = detect_color
+                    serial_receive_msg.color = detect_color
                 else:
                     self.get_logger().warn("Invalid header received, 没有数据")
-                
-                # # 发送ROS消息
+
+                # 发送ROS消息
                 self.pub_uart_receive.publish(serial_receive_msg)
-                self.get_logger().warn(f'Publishing: {serial_receive_msg}， tracking_color： {serial_receive_msg.tracking_color}')
+                self.get_logger().info(f'Publishing: {serial_receive_msg}， tracking_color： {serial_receive_msg.color}')
 
-
-            except serial.SerialException as e:
+            except (serial.SerialException, struct.error, ValueError) as e:
                 self.get_logger().error(f"接收数据时出错: {str(e)}")
                 self.reopen_port()
+    
+    
 
     def send_data(self, msg):
         """处理目标信息并通过串口发送"""
