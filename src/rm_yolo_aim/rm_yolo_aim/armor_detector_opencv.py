@@ -26,7 +26,7 @@ def calculate_distance(point1, point2):
     return distance
 
 
-def adjust(w_h, angle):  # 调整矩形的函数
+def adjust(w_h, angle, hw):  # 调整矩形的函数
     (w, h) = w_h
     if w > h:  # 如果宽度大于高度
         w, h = h, w  # 交换宽度和高度
@@ -34,7 +34,11 @@ def adjust(w_h, angle):  # 调整矩形的函数
             angle = angle - 90 # 调整角度，使其跟随高度
         elif angle < 0 :
             angle = angle + 90
-    return (w, h), angle  # 返回调整后的结果
+    if h/w >= hw :
+        is_thin = True
+    else :
+        is_thin = False
+    return (w, h), angle, is_thin  # 返回调整后的结果
 
 
 def angle_to_slope(angle_degrees):
@@ -128,8 +132,8 @@ class ArmorDetector:  # 定义检测器类
         for contour in contours:
             if cv2.contourArea(contour) >= self.light_params["light_area_min"]:
                 center, w_h, angle = cv2.minAreaRect(contour)
-                w_h, angle = adjust(w_h, angle)
-                if angle >= self.light_params["light_angle_min"] and angle <= self.light_params["light_angle_max"] :
+                w_h, angle, is_thin = adjust(w_h, angle, self.light_params["hw"])
+                if angle >= self.light_params["light_angle_min"] and angle <= self.light_params["light_angle_max"] and is_thin :
                     rect = center, w_h, angle
                     is_lights.append(rect)
        
@@ -174,13 +178,17 @@ class ArmorDetector:  # 定义检测器类
                     roi[0, i] = self.img[current_y, current_x]  # 保存像素值
 
             sum_r, sum_b = np.sum(roi[:, :, 2]), np.sum(roi[:, :, 0])  # 计算红色和蓝色的总和
+
             if self.color in [1, 2] and sum_b > sum_r:  # 根据模式识别颜色
                 light_blue = Light(up, down, rect[2], 1)  # 创建蓝色灯条对象
                 lights.append(light_blue)  # 添加蓝色灯条
+
             if self.color in [0, 2] and sum_r > sum_b:  # 根据模式识别颜色
                 light_red = Light(up, down, rect[2], 0)  # 创建红色灯条对象
                 lights.append(light_red)  # 添加红色灯条
+
         self.lights = lights
+
         return self.lights
 
 
@@ -264,7 +272,7 @@ class ArmorDetector:  # 定义检测器类
 
     def draw_lights(self, img):  # 绘制灯条的函数
             for light in self.lights:  # 遍历灯条
-            # 绘制直线
+                # 绘制直线
                 cv2.line(img, light.up, light.down, self.light_color[light.color], 1) 
                 # 绘制中心点
                 cv2.circle(img, (light.cx, light.cy), 1, self.light_dot[light.color], -1)  # 5是半径，-1表示填充
@@ -367,7 +375,8 @@ if __name__ == "__main__":  # 主程序入口
         "vertical_discretization": 0.3,  # 垂直离散
         "height_tol": 12,  # 高度容差
         "cy_tol": 5,  # 中心点的y轴容差
-        "height_multiplier": 3 
+        "height_multiplier": 3, 
+        "hw" : 7.2
     }
     # 颜色参数字典
     color_params = {
@@ -377,7 +386,8 @@ if __name__ == "__main__":  # 主程序入口
     }
     detector = ArmorDetector(detect_color, display_mode, binary_val, light_params, color_params)  # 创建检测器对象
     info = detector.detect_armor(cv2.imread('src/rm_yolo_aim/test/rb.jpeg'))  # 读取图像并进行检测
-    detector.display()  # 显示图像
+    img = detector.display()  # 显示图像
+    cv2.imread('result', img)
     logger.info(info) # 打印检测结果
     cv2.waitKey(0)  # 等待按键
     cv2.destroyAllWindows()  # 关闭所有窗口

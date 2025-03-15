@@ -25,7 +25,8 @@ light_params = {
     "vertical_discretization": 0.8,  # 垂直离散
     "height_tol": 15,  # 高度容差
     "cy_tol": 7,  # 中心点的y轴容差
-    "height_multiplier": 2.0 
+    "height_multiplier": 2.0, 
+    "hw" : 1.7 
 }
 
 # 颜色参数字典
