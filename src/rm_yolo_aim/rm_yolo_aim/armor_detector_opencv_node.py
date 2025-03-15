@@ -8,15 +8,15 @@ from cv_bridge import CvBridge          # ROS与OpenCV图像转换类
 import json                             # JSON序列化库
 from rcl_interfaces.msg import SetParametersResult  # 导入 SetParametersResult 消息类型
 from rm_yolo_aim.armor_detector_opencv import ArmorDetector
-from rm_interfaces.msg import ArmorsMsg  # 导入自定义消息类型
+from rm_interfaces.msg import ArmorsMsg, Decision  # 导入自定义消息类型
 import time
 
 # 模式参数字典
 detect_color =  2  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
 display_mode = 0 # 显示模式 None: 不显示, Binary: 显示二值化图, All: 显示二值化图和结果图像
 
-# 图像参数字典
-binary_val = 14  
+binary_val_blue = 40
+binary_val_red = 64
 light_params = {
     "light_area_min": 5,  # 最小灯条面积
     "light_angle_min": -45,  # 最小灯条角度
@@ -36,7 +36,7 @@ color_params = {
     "light_dot": {1: (0, 0, 255), 0: (255, 0, 0)}  # 灯条中心点颜色映射
 }
 
-detector = ArmorDetector(detect_color, display_mode, binary_val, light_params, color_params)  # 创建检测器对象
+detector = ArmorDetector(detect_color, display_mode, binary_val_red, light_params, color_params)  # 创建检测器对象
 
 def time_diff(last_time=[None]):
     """计算两次调用之间的时间差，单位为纳秒。"""
@@ -69,6 +69,8 @@ class ArmorDetectorNode(Node):
             Image, '/image_raw', self.listener_callback, 10)   # 创建订阅者对象
         self.sub_camera_info = self.create_subscription(
             CameraInfo, '/camera_info', self.listener_callback_camera_info, 10)
+        self.sub_serial = self.create_subscription(
+            Decision, '/nav/decision', self.listener_callback_serial, 10)  # 订阅串口数据
         
         self.publisher_binary_img  = self.create_publisher(Image, '/detector/binary_img', 10)  # 创建图像发布者
         self.publisher_img  = self.create_publisher(Image, '/detector/armors_img', 10)  # 创建图像发布者
@@ -76,6 +78,7 @@ class ArmorDetectorNode(Node):
         self.cv_bridge = CvBridge()                           # 创建图像转换对象
         self.cv_image = None
         self.camera_info = None
+        self.tracking_color = -1
 
         # 在节点初始化中声明参数
         for key, value in light_params.items():
@@ -103,6 +106,24 @@ class ArmorDetectorNode(Node):
                 self.get_logger().info(f'更新灯条参数 {param.name}: {light_params[param.name]}')  # 打印更新信息
         return SetParametersResult(successful=True)  # 返回成功结果
     
+    def listener_callback_serial(self, msg):
+        # 获取 Decision 数据
+        # self.get_logger().info(f'Received Decision data: {msg}')
+
+        # 这里可以对串口数据进行进一步处理
+        if self.tracking_color != msg.color:
+            self.tracking_color = msg.color
+
+            if self.tracking_color == 0:
+                detector.binary_val = binary_val_red
+                self.get_logger().warn(f'二值化阈值改变为 {detector.binary_val},颜色改变为红色')
+            elif self.tracking_color == 1:
+                self.tracking_color = binary_val_blue
+                self.get_logger().warn(f'二值化阈值改变为 {detector.binary_val},颜色改变为蓝色')
+            else:
+                self.get_logger().warn(f'颜色不合法')
+
+
     def listener_callback_camera_info(self, data):
         if self.camera_info != data:
             self.camera_info = data
@@ -168,6 +189,7 @@ class ArmorDetectorNode(Node):
         self.get_logger().info(f'发布了 armors 的数据: {armors_msg.data}')
         # dt = time_diff()
         # print(f'发布消息，时间 {dt}')
+
 
 def main(args=None):                            # ROS2节点主入口main函数
     rclpy.init(args=args)                       # ROS2 Python接口初始化
