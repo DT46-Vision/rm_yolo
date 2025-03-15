@@ -8,8 +8,11 @@ USER = os.environ['USER']
 
 class ArmorDetector:
     def __init__(self):
+    #     model_path = (
+    #     f"/home/{USER}/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best_openvino_model/"
+    # )
         model_path = (
-        f"/home/{USER}/ros_ws/src/rm_yolo_aim/rm_yolo_aim/models/best_openvino_model/"
+        f"/home/mt/yolo_armor/320_11/320_11.pt"
     )
         self.logger = logger
         self.model = YOLO(model_path)  # 加载模型
