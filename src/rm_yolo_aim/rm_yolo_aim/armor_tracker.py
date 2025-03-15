@@ -20,7 +20,6 @@ def select_tracking_armor(armors_dict, color):
     if not filtered_color_data:
         tracking_armor = {}
     else:
-
         # 找出 height 最大的条目
         tracking_armor = max(filtered_color_data.items(), key=lambda item: item[1]["height"])[1]
 
