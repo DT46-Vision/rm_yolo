@@ -4,7 +4,7 @@ import rclpy                            # ROS2 Python接口库
 from rclpy.node import Node             # ROS2 节点类
 from std_msgs.msg import String, Header # 字符串消息类型和头部消息类型
 from sensor_msgs.msg import Image       # 图像消息类型
-from rm_interfaces.msg import ArmorsMsg, ArmorTracking, Decision  # 导入自定义消息类型
+from rm_interfaces.msg import ArmorsMsg, ArmorTracking ,Decision  # 导入自定义消息类型
 from rm_yolo_aim.armor_tracker import select_tracking_armor, pixel_to_angle_and_deep
 from rcl_interfaces.msg import SetParametersResult  # 导入 SetParametersResult 消息类型
 from rm_yolo_aim.Kalman import KalmanFilter
@@ -51,11 +51,12 @@ class ArmorTrackerNode(Node):
 
         self.pub_tracker = self.create_publisher(ArmorTracking, '/tracker/target', 10) # 创建发布者/tracker/target
 
-        self.tracking_color = 0    # 1蓝色表示, 0表示红色, 现初始化为红色
+        self.tracking_color = -1    # 1蓝色表示, 0表示红色, 现初始化为红色
         self.tracking_armor = None # 初始化追踪装甲板为None
 
         self.declare_parameter('use_kf', self.use_kf)  # 声明 use_kf 参数
         self.declare_parameter('frame_add', self.frame_add)  # 声明 frame_add 参数
+        self.declare_parameter('tracking_color', self.tracking_color)  # 声明 detect_color 参数
         self.add_on_set_parameters_callback(self.param_callback)  # 添加参数回调
         self.get_logger().info('Armor Tracker Node has started.')
 
@@ -65,6 +66,8 @@ class ArmorTrackerNode(Node):
                 self.use_kf = param.value
             if param.name == 'frame_add':
                 self.frame_add = param.value
+            if param.name == 'tracking_color':
+                self.tracking_color = param.value
         return SetParametersResult(successful=True)  # 返回成功结果
 
     def listener_callback_cam(self, data):
@@ -80,11 +83,21 @@ class ArmorTrackerNode(Node):
             # 将JSON格式的数据转换回Python字典
             armors_dict = json.loads(msg.data)
 
+            if self.tracking_color == 0: 
+                color_str = '红色'
+                self.get_logger().info(f"得到需要 追踪 的 {color_str} 装甲板 {self.tracking_armor}")
+            elif self.tracking_color == 1: 
+                color_str = "蓝色"
+                self.get_logger().info(f"得到需要 追踪 的 {color_str} 装甲板 {self.tracking_armor}")
+            elif self.tracking_color == -1: 
+                color_str = "未知"
+                self.get_logger().info(f"不需要 追踪 装甲板 ")
+            else :
+                color_str = "未知"
+                self.get_logger().info(f"颜色格式错误")
+
             # 选择要跟踪的装甲板
             self.tracking_armor = select_tracking_armor(armors_dict, self.tracking_color)  # 0表示红色
-            
-            color_str = '红色' if (self.tracking_color == 0) else "蓝色"
-            self.get_logger().info(f"得到需要 追踪 的 {color_str} 装甲板 {self.tracking_armor}")
             
             if not self.tracking_armor:  # 检查 tracking_armor 是否为空
                 logger.info("tracking_armor is empty, returning default values.")
