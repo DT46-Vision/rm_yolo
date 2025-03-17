@@ -15,19 +15,19 @@ import time
 detect_color =  2  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
 display_mode = 0 # 显示模式 None: 不显示, Binary: 显示二值化图, All: 显示二值化图和结果图像
 
-binary_val_blue = 70
-binary_val_red = 60
+binary_val_blue = 26
+binary_val_red = 25
 light_params = {
     "light_area_min": 5,  # 最小灯条面积
     "light_angle_min": -35,  # 最小灯条角度
     "light_angle_max": 35,  # 最大灯条角度
     "light_red_ratio": 3.0,
-    "light_blue_ratio": 2.1,
+    "light_blue_ratio": 1.5,
     "light_angle_tol": 7,  # 灯条角度容差
     "vertical_discretization": 1.5,  # 垂直离散
     "height_tol": 18,  # 高度容差
-    "cy_tol": 10,  # 中心点的y轴容差
-    "height_multiplier": 2.0, 
+    "cy_tol": 5,  # 中心点的y轴容差
+    "height_multiplier": 2.7, 
     "hw" : 2.0 
 }
 
