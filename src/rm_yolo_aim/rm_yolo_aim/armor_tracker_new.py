@@ -21,7 +21,7 @@ def select_tracking_armor(armors_dict, color, track_hight_tol, cx_tol):
     
     elif color == 0:
         filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] > 5}
-   
+    
     else:
         return {}  # 颜色输入不合法就返回空
     
@@ -47,7 +47,7 @@ def select_tracking_armor(armors_dict, color, track_hight_tol, cx_tol):
         cx_diff = abs(top_two_highest_armor[0][1]['center'][0] - top_two_highest_armor[1][1]['center'][0])
         if cx_diff > cx_tol:
             # 如果 X 坐标差超过阈值，则返回 X 坐标最小的装甲板
-            if top_two_highest_armor[0][1]['center'][0] < top_two_highest_armor[1][1]['center'][0]:
+            if abs(top_two_highest_armor[0][1]['center'][0]) < abs(top_two_highest_armor[1][1]['center'][0]):
                 return top_two_highest_armor[0][1]
             else:
                 return top_two_highest_armor[1][1]
