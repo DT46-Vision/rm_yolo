@@ -59,7 +59,6 @@ def select_tracking_armor(armors_dict, color, track_hight_tol, cx_tol):
                 return top_two_highest_armor[1][1]
 
 def pixel_to_angle_and_deep(height, center, vfov, pic_width):
-
     # 估计距离
     deep = height
     # 确保 vfov 是以弧度为单位
