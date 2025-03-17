@@ -179,11 +179,11 @@ class ArmorDetector:  # 定义检测器类
 
             sum_r, sum_b = np.sum(roi[:, :, 2]), np.sum(roi[:, :, 0])  # 计算红色和蓝色的总和
 
-            if self.color in [1, 2] and sum_b > sum_r:  # 根据模式识别颜色
+            if self.color in [1, 2] and sum_b > sum_r * self.light_params["light_blue_ratio"]:  # 根据模式识别颜色
                 light_blue = Light(up, down, rect[2], 1)  # 创建蓝色灯条对象
                 lights.append(light_blue)  # 添加蓝色灯条
 
-            if self.color in [0, 2] and sum_r > sum_b:  # 根据模式识别颜色
+            if self.color in [0, 2] and sum_r > sum_b * self.light_params["light_red_ratio"]:  # 根据模式识别颜色
                 light_red = Light(up, down, rect[2], 0)  # 创建红色灯条对象
                 lights.append(light_red)  # 添加红色灯条
 
@@ -371,6 +371,8 @@ if __name__ == "__main__":  # 主程序入口
         "light_area_min": 5,  # 最小灯条面积
         "light_angle_min": -45,  # 最小灯条角度
         "light_angle_max": 45,  # 最大灯条角度
+        "light_red_ratio": 1.0,
+        "light_blue_ratio": 1.0,
         "light_angle_tol": 20,  # 灯条角度容差
         "vertical_discretization": 0.3,  # 垂直离散
         "height_tol": 12,  # 高度容差
