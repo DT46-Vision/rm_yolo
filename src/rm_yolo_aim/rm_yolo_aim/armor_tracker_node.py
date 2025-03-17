@@ -5,7 +5,7 @@ from rclpy.node import Node             # ROS2 节点类
 from std_msgs.msg import String, Header # 字符串消息类型和头部消息类型
 from sensor_msgs.msg import Image       # 图像消息类型
 from rm_interfaces.msg import ArmorsMsg, ArmorTracking, Decision  # 导入自定义消息类型
-from rm_yolo_aim.armor_tracker import select_tracking_armor, pixel_to_angle_and_deep
+from rm_yolo_aim.armor_tracker_new import select_tracking_armor, pixel_to_angle_and_deep
 from rcl_interfaces.msg import SetParametersResult  # 导入 SetParametersResult 消息类型
 from rm_yolo_aim.Kalman import KalmanFilter
 from loguru import logger
@@ -48,6 +48,8 @@ class ArmorTrackerNode(Node):
 
         self.lost = 0               # 初始化丢失帧数
         self.frame_add = 45         # 初始化补帧数
+        self.reflection_hight_tol = 20
+        self.reflection_cx_tol = 10
 
         self.pub_tracker = self.create_publisher(ArmorTracking, '/tracker/target', 10) # 创建发布者/tracker/target
 
@@ -59,6 +61,8 @@ class ArmorTrackerNode(Node):
         self.declare_parameter('frame_add', self.frame_add)  # 声明 frame_add 参数
         self.declare_parameter('follow_decision', self.follow_decision)  # 声明 frame_add 参数
         self.declare_parameter('tracking_color', self.tracking_color)  # 声明 detect_color 参数
+        self.declare_parameter('reflection_hight_tol', self.reflection_hight_tol)  # 声明 frame_add 参数
+        self.declare_parameter('reflection_cx_tol', self.reflection_cx_tol)  # 声明 detect_color 参数
         self.add_on_set_parameters_callback(self.param_callback)  # 添加参数回调
         self.get_logger().info('Armor Tracker Node has started.')
 
@@ -72,6 +76,10 @@ class ArmorTrackerNode(Node):
                 self.tracking_color = param.value
             if param.name == 'follow_decision':
                 self.follow_decision = param.value
+            if param.name == 'reflection_hight_tol':
+                self.reflection_hight_tol = param.value
+            if param.name == 'reflection_cx_tol':
+                self.reflection_cx_tol = param.value
         return SetParametersResult(successful=True)  # 返回成功结果
 
     def listener_callback_cam(self, data):

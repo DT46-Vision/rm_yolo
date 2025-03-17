@@ -5,9 +5,8 @@ from loguru import logger
 RAD2DEG = 180 / math.pi
 DEG2RAD = math.pi / 180
 
-def select_tracking_armor(armors_dict, color):
-    track_hight_tol = 5
-    cx_tol = 10
+def select_tracking_armor(armors_dict, color, track_hight_tol, cx_tol):
+
     # 筛选垂直方向的长度大于1像素的装甲板
     filtered_height_data = {k: v for k, v in armors_dict.items() if v["height"] > 1}
     
