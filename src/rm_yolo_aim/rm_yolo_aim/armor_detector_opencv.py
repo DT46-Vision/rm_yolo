@@ -214,7 +214,7 @@ class ArmorDetector:  # 定义检测器类
                 slope2 = angle_to_slope(light2_angle)           
                 slope_line = angle_to_slope(line_angle)
                 
-                if abs(slope1 * slope_line + 1) < light_params["vertical_discretization"] and abs(slope2 * slope_line + 1) < light_params["vertical_discretization"]:
+                if abs(slope1 * slope_line + 1) < light_params["vertical_discretization"] or abs(slope2 * slope_line + 1) < light_params["vertical_discretization"]:
                     height = max(light1.height, light2.height)
                     distance = calculate_distance((light1.cx, light1.cy), (light2.cx, light2.cy))
                     if distance > height :
