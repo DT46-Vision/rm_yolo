@@ -58,9 +58,20 @@ def select_tracking_armor(armors_dict, color, track_hight_tol, cx_tol):
             else:
                 return top_two_highest_armor[1][1]
 
+def deep_cal(x):
+    # https://mycurvefit.com/ 
+    # 测了若干组像素对应距离的数据，输入上述网站计算得到的像素-距离公式
+    a = -12.75855
+    b = 2162.459
+    c = 4.823192
+    d = 1.161739
+    
+    y = a + (b - a) / (1 + (x / c) ** d)
+    return y
+
 def pixel_to_angle_and_deep(height, center, vfov, pic_width):
-    # 估计距离
-    deep = height
+
+    deep = deep_cal(height) # 估计距离
     # 确保 vfov 是以弧度为单位
     vfov_radians = vfov * DEG2RAD
     # 相机 x, y 坐标系下投影面的 Z 轴距离(单位: 像素)
@@ -76,13 +87,13 @@ def pixel_to_angle_and_deep(height, center, vfov, pic_width):
 if __name__ == "__main__":
 
     armors_dict = {
-        "179":  {"class_id": 7, "height": 300, "center": [ 147,  333]},
+        "179":  {"class_id": 7, "height": 429, "center": [ 147,  333]},
         "-143": {"class_id": 1, "height": 288, "center": [-143, -35]},
-        "175":  {"class_id": 7, "height": 296, "center": [ 149,  36]},
+        "175":  {"class_id": 7, "height": 1, "center": [ 149,  36]},
         "-113": {"class_id": 1, "height": 300, "center": [ 91, -35]},
     }
 
-    result = select_tracking_armor(armors_dict, 0)
+    result = select_tracking_armor(armors_dict, 0, 20, 10)
     if result:
         yaw, pitch, deep = pixel_to_angle_and_deep(result["height"], result["center"], 55, 72)
     
