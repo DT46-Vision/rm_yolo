@@ -22,11 +22,11 @@ light_params = {
     "light_angle_min": -35,  # 最小灯条角度
     "light_angle_max": 35,  # 最大灯条角度
     "light_red_ratio": 3.0,
-    "light_blue_ratio": 3.0,
-    "light_angle_tol": 8,  # 灯条角度容差
-    "vertical_discretization": 0.8,  # 垂直离散
-    "height_tol": 5,  # 高度容差
-    "cy_tol": 7,  # 中心点的y轴容差
+    "light_blue_ratio": 2.1,
+    "light_angle_tol": 7,  # 灯条角度容差
+    "vertical_discretization": 1.5,  # 垂直离散
+    "height_tol": 18,  # 高度容差
+    "cy_tol": 10,  # 中心点的y轴容差
     "height_multiplier": 2.0, 
     "hw" : 2.0 
 }
