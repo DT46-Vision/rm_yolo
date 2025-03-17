@@ -136,7 +136,7 @@ class ArmorDetector:  # 定义检测器类
                 if angle >= self.light_params["light_angle_min"] and angle <= self.light_params["light_angle_max"] and is_thin :
                     rect = center, w_h, angle
                     is_lights.append(rect)
-       
+        
         for is_light in is_lights:  # 遍历所有光源
             is_overlapping = False  # 标记当前光源是否与其他光源重叠
             for other_is_light in is_lights:  # 遍历所有光源
@@ -183,7 +183,7 @@ class ArmorDetector:  # 定义检测器类
                 light_blue = Light(up, down, rect[2], 1)  # 创建蓝色灯条对象
                 lights.append(light_blue)  # 添加蓝色灯条
 
-            if self.color in [0, 2] and sum_r > sum_b * self.light_params["light_red_ratio"]:  # 根据模式识别颜色
+            elif self.color in [0, 2] and sum_r > sum_b * self.light_params["light_red_ratio"]:  # 根据模式识别颜色
                 light_red = Light(up, down, rect[2], 0)  # 创建红色灯条对象
                 lights.append(light_red)  # 添加红色灯条
 
@@ -214,7 +214,7 @@ class ArmorDetector:  # 定义检测器类
                 slope2 = angle_to_slope(light2_angle)           
                 slope_line = angle_to_slope(line_angle)
                 
-                if abs(slope1 * slope_line + 1) < light_params["vertical_discretization"] or abs(slope2 * slope_line + 1) < light_params["vertical_discretization"]:
+                if abs(slope1 * slope_line + 1) < light_params["vertical_discretization"] and abs(slope2 * slope_line + 1) < light_params["vertical_discretization"]:
                     height = max(light1.height, light2.height)
                     distance = calculate_distance((light1.cx, light1.cy), (light2.cx, light2.cy))
                     if distance > height :
@@ -371,8 +371,8 @@ if __name__ == "__main__":  # 主程序入口
         "light_area_min": 5,  # 最小灯条面积
         "light_angle_min": -45,  # 最小灯条角度
         "light_angle_max": 45,  # 最大灯条角度
-        "light_red_ratio": 1.0,
-        "light_blue_ratio": 1.0,
+        "light_red_ratio": 3.0,
+        "light_blue_ratio": 3.0,
         "light_angle_tol": 20,  # 灯条角度容差
         "vertical_discretization": 0.3,  # 垂直离散
         "height_tol": 12,  # 高度容差
