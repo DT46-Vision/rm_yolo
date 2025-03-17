@@ -50,6 +50,7 @@ class ArmorTrackerNode(Node):
         self.frame_add = 45         # 初始化补帧数
         self.reflection_hight_tol = 20
         self.reflection_cx_tol = 10
+        self.offset_yaw = 2.5
 
         self.pub_tracker = self.create_publisher(ArmorTracking, '/tracker/target', 10) # 创建发布者/tracker/target
 
@@ -63,6 +64,7 @@ class ArmorTrackerNode(Node):
         self.declare_parameter('tracking_color', self.tracking_color)  # 声明 detect_color 参数
         self.declare_parameter('reflection_hight_tol', self.reflection_hight_tol)  # 声明 frame_add 参数
         self.declare_parameter('reflection_cx_tol', self.reflection_cx_tol)  # 声明 detect_color 参数
+        self.declare_parameter('offset_yaw', self.offset_yaw)  # 声明 detect_color 参数
         self.add_on_set_parameters_callback(self.param_callback)  # 添加参数回调
         self.get_logger().info('Armor Tracker Node has started.')
 
@@ -80,6 +82,8 @@ class ArmorTrackerNode(Node):
                 self.reflection_hight_tol = param.value
             if param.name == 'reflection_cx_tol':
                 self.reflection_cx_tol = param.value
+            if param.name == 'offset_yaw':
+                self.offset_yaw = param.value
         return SetParametersResult(successful=True)  # 返回成功结果
 
     def listener_callback_cam(self, data):
@@ -157,7 +161,7 @@ class ArmorTrackerNode(Node):
 
             # 设置的装甲板信息
             tracking_armor_msg.data  = tracking_armor_json
-            tracking_armor_msg.yaw   = float(yaw)
+            tracking_armor_msg.yaw   = float(yaw + )
             tracking_armor_msg.pitch = float(pitch)
             tracking_armor_msg.deep  = float(deep)
 
