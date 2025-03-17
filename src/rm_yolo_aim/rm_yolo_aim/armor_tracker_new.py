@@ -59,6 +59,8 @@ def select_tracking_armor(armors_dict, color, track_hight_tol, cx_tol):
                 return top_two_highest_armor[1][1]
 
 def deep_cal(x):
+    if x <= 0:
+        return 0
     # https://mycurvefit.com/ 
     # 测了若干组像素对应距离的数据，输入上述网站计算得到的像素-距离公式
     a = -12.75855
