@@ -52,7 +52,7 @@ class ArmorTrackerNode(Node):
         self.reflection_cx_tol = 10
         self.offset_yaw = 0.0
         self.offset_pitch = 0.0
-        self.deep_buff = 0.000_001
+        self.deep_buff = 0.015
 
         self.pub_tracker = self.create_publisher(ArmorTracking, '/tracker/target', 10) # 创建发布者/tracker/target
 
@@ -170,7 +170,13 @@ class ArmorTrackerNode(Node):
             # 设置的装甲板信息
             tracking_armor_msg.data  = tracking_armor_json
             tracking_armor_msg.yaw   = float(yaw + self.offset_yaw)
-            tracking_armor_msg.pitch = float(pitch + self.offset_pitch + deep * self.deep_buff)
+            
+            if deep <= 500:
+                buff = deep * self.deep_buff
+            else:
+                buff = deep
+            
+            tracking_armor_msg.pitch = float(pitch + self.offset_pitch + buff)
             tracking_armor_msg.deep  = float(deep)
 
             self.get_logger().info(f"发布的 tracking_armor_msg: {tracking_armor_msg}")
