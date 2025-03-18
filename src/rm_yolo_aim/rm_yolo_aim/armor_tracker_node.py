@@ -50,7 +50,7 @@ class ArmorTrackerNode(Node):
         self.frame_add = 45         # 初始化补帧数
         self.reflection_hight_tol = 20
         self.reflection_cx_tol = 10
-        self.offset_yaw = 0.0
+        self.offset_yaw = 5.0
         self.offset_pitch = 0.0
         self.deep_buff = 0.015
 
