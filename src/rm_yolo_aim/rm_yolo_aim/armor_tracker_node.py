@@ -171,7 +171,7 @@ class ArmorTrackerNode(Node):
             tracking_armor_msg.data  = tracking_armor_json
             tracking_armor_msg.yaw   = float(yaw + self.offset_yaw)
             
-            if deep <= 500:
+            if deep <= 300:
                 buff = deep * self.deep_buff
             else:
                 buff = deep
