@@ -157,7 +157,7 @@ class ArmorTrackerNode(Node):
                     print(f"预测的 cx: {self.center_last[0]}, cy: {self.center_last[1]}, h: {self.height_last}")
 
             yaw, pitch, deep = pixel_to_angle_and_deep(self.height_last, self.center_last, 72, self.pic_width) 
-
+            buff = deep * self.deep_buff
             # 将装甲板信息字典转换为msg消息定义的格式
             tracking_armor_json = json.dumps(self.tracking_armor)
 
@@ -170,12 +170,6 @@ class ArmorTrackerNode(Node):
             # 设置的装甲板信息
             tracking_armor_msg.data  = tracking_armor_json
             tracking_armor_msg.yaw   = float(yaw + self.offset_yaw)
-            
-            if deep <= 300:
-                buff = deep * self.deep_buff
-            else:
-                buff = deep
-            
             tracking_armor_msg.pitch = float(pitch + self.offset_pitch + buff)
             tracking_armor_msg.deep  = float(deep)
 
