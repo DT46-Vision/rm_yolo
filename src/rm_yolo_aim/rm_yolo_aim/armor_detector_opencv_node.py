@@ -14,9 +14,10 @@ import time
 # 模式参数字典
 detect_color =  2  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
 display_mode = 0 # 显示模式 None: 不显示, Binary: 显示二值化图, All: 显示二值化图和结果图像
-
-binary_val_blue = 16
-binary_val_red = 15
+# night :16, 15
+# day :88, 87
+binary_val_blue = 88
+binary_val_red = 87
 light_params = {
     "light_area_min": 5,  # 最小灯条面积
     "light_angle_min": -35,  # 最小灯条角度
