@@ -52,8 +52,9 @@ class ArmorTrackerNode(Node):
         self.reflection_cx_tol = 10
         self.offset_yaw = 5.0
         self.offset_pitch = 0.0
-        self.deep_buff = 0.015
-
+        # self.deep_buff = 0.015  # default
+        self.deep_buff = 0.009
+        # 0.015
         self.pub_tracker = self.create_publisher(ArmorTracking, '/tracker/target', 10) # 创建发布者/tracker/target
 
         self.tracking_color = -1    # 1蓝色表示, 0表示红色, 现初始化为红色
