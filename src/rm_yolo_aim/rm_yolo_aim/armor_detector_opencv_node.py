@@ -25,9 +25,9 @@ light_params = {
     "light_blue_ratio": 3.5,
     "light_angle_tol": 7,  # 灯条角度容差
     "vertical_discretization": 1.5,  # 垂直离散
-    "height_tol": 18,  # 高度容差
-    "cy_tol": 5,  # 中心点的y轴容差
-    "height_multiplier": 3.7, 
+    "height_tol": 10,  # 高度容差
+    "cy_tol": 4,  # 中心点的y轴容差
+    "height_multiplier": 2.7, 
     "hw" : 2.0 
 }
 
@@ -141,14 +141,14 @@ class ArmorDetectorNode(Node):
         # dt = time_diff()
         # print(f'消息转化成OpenCV图像，时间 {dt}')
 
-        # try:
-        #     tmp = len(self.camera_info.d)
-        #     if tmp != 0:
-        #         cv_image = detector.undistort_image(cv_image, self.camera_info)  # 畸变校正
-        #         self.get_logger().info('畸变校正了图像')
+        try:
+            tmp = len(self.camera_info.d)
+            if tmp != 0:
+                cv_image = detector.undistort_image(cv_image, self.camera_info)  # 畸变校正
+                self.get_logger().info('畸变校正了图像')
 
-        # except AttributeError as e:
-        #     self.get_logger().info(e)
+        except AttributeError as e:
+            self.get_logger().info(e)
 
 
         # dt = time_diff()
