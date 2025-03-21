@@ -41,13 +41,13 @@ class ArmorTrackerNode(Node):
         self.center_last = (0, 0)   # 默认初始化中心点坐标为(0, 0)
         self.height_last = 0             # 初始化armmor高度为0
 
-        self.use_kf = True          # 是否使用卡尔曼滤波
+        self.use_kf = False          # 是否使用卡尔曼滤波
         self.kf_cx = KalmanFilter()
         self.kf_cy = KalmanFilter()
         self.kf_h = KalmanFilter()
 
         self.lost = 0               # 初始化丢失帧数
-        self.frame_add = 45         # 初始化补帧数
+        self.frame_add = 0         # 初始化补帧数
         self.reflection_hight_tol = 20
         self.reflection_cx_tol = 10
         self.offset_yaw = 0.0
