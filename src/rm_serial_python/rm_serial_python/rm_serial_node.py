@@ -73,6 +73,10 @@ class RMSerialDriver(Node):
             try:
                 # 更新消息头部
                 serial_receive_msg.header.stamp = self.get_clock().now().to_msg()
+                # # 打印接收到的任何数据并转换成 hex 字符串
+                # str = self.serial_port.read(128)
+                # self.get_logger().info(f"接收到的数据: {str}") 
+
 
                 # 读取数据头部
                 header = self.serial_port.read(1)
@@ -81,7 +85,7 @@ class RMSerialDriver(Node):
                     continue
 
                 # 如果头部存在且等于 0xA5
-                if header[0] == 0xA5:
+                if header[0] == 0xa5:
                     # 读取颜色信息字节
                     color_byte = self.serial_port.read(1)
                     if not color_byte or len(color_byte) != 1:
