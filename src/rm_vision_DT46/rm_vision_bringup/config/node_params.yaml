@@ -1,7 +1,7 @@
 /camera_node:
   ros__parameters:
     camera_info_url: package://hik_camera/config/camera_info.yaml
-    exposure_time: 750.0  # 曝光时间 us
+    exposure_time: 150.0  # 曝光时间 us
     gain: 16.0
 
 /serial_driver:
