@@ -187,7 +187,6 @@ class ArmorDetector:  # 定义检测器类
 
         return self.lights
 
-
     def is_close(self, light1, light2, light_params):  # 检查两个矩形是否接近则返回一个高度
         if abs(light1.cy - light2.cy) < light_params["cy_tol"]: 
             height = min(light1.height, light2.height)
