@@ -110,12 +110,6 @@ public:
         cy = static_cast<int>(std::abs(up.second - down.second) / 2 + std::min(up.second, down.second)); // 计算中心 y 坐标
         height = calculate_distance(up, down); // 计算高度
     }
-
-private:
-    // 计算两个点之间的距离
-    double calculate_distance(const std::pair<double, double>& point1, const std::pair<double, double>& point2) {
-        return std::sqrt(std::pow(point2.first - point1.first, 2) + std::pow(point2.second - point1.second, 2)); // 使用距离公式
-    }
 };
 
 class Armor {
@@ -168,34 +162,97 @@ public:
     std::vector<Light> lights; // 存储灯条列表
     std::vector<Armor> armors; // 存储装甲板列表
     std::map<int, std::map<std::string, int>> armors_dict; // 装甲板信息字典
+
     int binary_val; // 二值化阈值
     int color; // 颜色模式
     int display_mode; // 显示模式
     std::map<std::string, int> light_params; // 灯条参数
-    std::map<std::string, int> armor_color; // 装甲板颜色映射
-    std::map<std::string, int> light_color; // 灯条颜色映射
-    std::map<std::string, int> light_dot; // 灯条中心点颜色映射
+
+    // 颜色映射类型定义
+    using ColorMap = std::map<int, std::array<int, 3>>; // 使用 std::array 表示 RGB 颜色
+    using ColorParams = std::map<std::string, ColorMap>; // 使用嵌套的 map 类型
+
+    // 成员变量
+    ColorMap armor_color; // 装甲板颜色映射
+    ColorMap light_color; // 灯条颜色映射
+    ColorMap light_dot;   // 灯条中心点颜色映射
+    
     // 构造函数
     ArmorDetector(int detect_color, int display_mode, int binary_val, 
                   const std::map<std::string, int>& light_params, 
-                  const std::map<std::string, int>& color_params): 
-        binary_val(binary_val), color(detect_color), display_mode(display_mode), 
-        light_params(light_params), armor_color(color_params.at("armor_color")),
-        light_color(color_params.at("light_color")), light_dot(color_params.at("light_dot")) {}
+                  const ColorParams& color_params) 
+        : binary_val(binary_val), color(detect_color), display_mode(display_mode), 
+          light_params(light_params),
+          armor_color(color_params.at("armor_color")), // 获取装甲板颜色映射
+          light_color(color_params.at("light_color")), // 获取灯条颜色映射
+          light_dot(color_params.at("light_dot")) {}   // 获取灯条中心点颜色映射
+    
+    // 处理图像的函数
+    cv::Mat process(const cv::Mat& img_input) {
+        img = img_input.clone(); // 复制输入图像
+        cv::Mat gray_img; // 用于存储灰度图像
+
+        // 将图像转换为灰度图并进行二值化处理
+        cv::cvtColor(img, gray_img, cv::COLOR_BGR2GRAY); // 转为灰度图
+        cv::threshold(gray_img, img_binary, binary_val, 255, cv::THRESH_BINARY); // 二值化处理
+
+        return img_binary; // 返回二值化图像
+    }
+
+    
 };
 
 int main() {
     // // 前向声明 project 函数
     // std::pair<double, double> project(const std::vector<std::pair<double, double>>& polygon, const std::pair<double, double>& axis);
 
-    // 假设 Light 类已经定义并创建了 light1 和 light2 实例
-    Light light1({1.0, 4.0}, {1.0, 1.0}, 30.0, 0); // 创建第一根灯条
-    Light light2({3.0, 4.0}, {3.0, 1.0}, 30.0, 0); // 创建第二根灯条
-    
-    Armor armor(light1, light2, 5.0, 1); // 创建装甲板
+    // 读取输入图像
+    cv::Mat input_image = cv::imread("./src/rm_opencv_aim/test/b.jpg");
+    if (input_image.empty()) {
+        std::cerr << "Error: Could not load image." << std::endl;
+        return -1; // 返回错误码
+    }
 
-    std::cout << "Armor center: (" << armor.center.first << ", " << armor.center.second << ")" << std::endl;
-    std::cout << "Armor type class: " << armor.type_class() << std::endl;
+    // 创建 ArmorDetector 对象
+    std::map<std::string, int> light_params = {
+        {"light_area_min", 5},
+        {"light_angle_min", -35},
+        {"light_angle_max", 35},
+        {"light_red_ratio", 1},
+        {"light_blue_ratio", 1},
+        {"cy_tol", 5},
+        {"height_tol", 18}, 
+        {"light_angle_tol", 7},
+        {"vertical_discretization", 2.1},
+        {"height_multiplier", 2.7},
+    };
 
+    std::map<std::string, std::map<int, std::array<int, 3>>> color_params = {
+        {"armor_color", {{1, {255, 255, 0}}, {0, {128, 0, 128}}}},
+        {"light_color", {{1, {200, 71, 90}}, {0, {0, 100, 255}}}},
+        {"light_dot", {{1, {0, 0, 255}}, {0, {255, 0, 0}}}}
+    };
+    //模式参数字典
+    int detect_color =  1;  // 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
+    int display_mode = 1; // 显示模式 0: 不显示, 1: 显示二值化图, 2: 显示二值化图和结果图像
+    // 图像参数字典
+    int binary_val = 225;
+    ArmorDetector detector(detect_color, display_mode, binary_val, light_params, color_params); // 创建 ArmorDetector 对象
+
+    // 处理图像并获取二值化结果
+    cv::Mat binary_image = detector.process(input_image);
+
+    // 创建窗口并显示图像
+    cv::namedWindow("Input Image", cv::WINDOW_AUTOSIZE); // 创建窗口
+    cv::imshow("Input Image", input_image); // 显示输入图像
+
+    cv::namedWindow("Binary Image", cv::WINDOW_AUTOSIZE); // 创建窗口
+    cv::imshow("Binary Image", binary_image); // 显示二值化图像
+
+    // 等待用户按键
+    cv::waitKey(0); // 等待任意按键
+
+    // 关闭所有窗口
+    cv::destroyAllWindows();
     return 0;
 }

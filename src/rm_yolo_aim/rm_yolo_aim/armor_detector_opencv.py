@@ -196,11 +196,10 @@ class ArmorDetector:  # 定义检测器类
                     return 0, height # first small armor
                 elif distance < height * 1.86 * self.light_params["height_multiplier"]:
                     return 1, height # last large armor
-                
-        angle_diff = abs(light1.angle - light2.angle)  # 计算角度差
-
-        if angle_diff <= light_params["light_angle_tol"]:  # 判断角度差是否在容忍范围内
-            if abs(light1.height - light2.height) <= light_params["height_tol"]:  # 判断高差
+       
+        if abs(light1.height - light2.height) <= light_params["height_tol"]:  # 判断高差
+            angle_diff = abs(light1.angle - light2.angle)  # 计算角度差
+            if angle_diff <= light_params["light_angle_tol"]:  # 判断角度差是否在容忍范围内        
                 light1_angle = math.degrees(math.atan2(light1.up[1]- light1.down[1], light1.up[0] - light1.down[0]))  # 计算连线角度
                 light2_angle = math.degrees(math.atan2(light2.up[1]- light2.down[1], light2.up[0] - light2.down[0]))  # 计算连线角度                
                 line_angle = math.degrees(math.atan2(light1.cy - light2.cy, light1.cx - light2.cx))  # 计算连线角度
@@ -372,7 +371,7 @@ if __name__ == "__main__":  # 主程序入口
         "light_blue_ratio": 1,
         "light_angle_tol": 7,  # 灯条角度容差
         "vertical_discretization": 2.1,  # 垂直离散
-        "height_tol": 18,  # 高度容差
+        "height_tol": 10,  # 高度容差
         "cy_tol": 5,  # 中心点的y轴容差
         "height_multiplier": 2.7, 
     }
