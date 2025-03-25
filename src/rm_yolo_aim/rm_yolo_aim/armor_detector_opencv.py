@@ -26,7 +26,7 @@ def calculate_distance(point1, point2):
     return distance
 
 
-def adjust(w_h, angle, hw):  # 调整矩形的函数
+def adjust(w_h, angle):  # 调整矩形的函数
     (w, h) = w_h
     if w > h:  # 如果宽度大于高度
         w, h = h, w  # 交换宽度和高度
@@ -34,11 +34,7 @@ def adjust(w_h, angle, hw):  # 调整矩形的函数
             angle = angle - 90 # 调整角度，使其跟随高度
         elif angle < 0 :
             angle = angle + 90
-    if h/w >= hw :
-        is_thin = True
-    else :
-        is_thin = False
-    return (w, h), angle, is_thin  # 返回调整后的结果
+    return (w, h), angle # 返回调整后的结果
 
 
 def angle_to_slope(angle_degrees):
@@ -132,8 +128,8 @@ class ArmorDetector:  # 定义检测器类
         for contour in contours:
             if cv2.contourArea(contour) >= self.light_params["light_area_min"]:
                 center, w_h, angle = cv2.minAreaRect(contour)
-                w_h, angle, is_thin = adjust(w_h, angle, self.light_params["hw"])
-                if angle >= self.light_params["light_angle_min"] and angle <= self.light_params["light_angle_max"] and is_thin :
+                w_h, angle = adjust(w_h, angle)
+                if angle >= self.light_params["light_angle_min"] and angle <= self.light_params["light_angle_max"]:
                     rect = center, w_h, angle
                     is_lights.append(rect)
         
@@ -191,7 +187,6 @@ class ArmorDetector:  # 定义检测器类
 
         return self.lights
 
-
     def is_close(self, light1, light2, light_params):  # 检查两个矩形是否接近则返回一个高度
         if abs(light1.cy - light2.cy) < light_params["cy_tol"]: 
             height = min(light1.height, light2.height)
@@ -230,12 +225,15 @@ class ArmorDetector:  # 定义检测器类
         armors = []
         processed_indices = set()  # 用于存储已处理的矩形索引
         lights_count = len(lights)  # 存储列表长度，避免重复计算
+
         for i in range(lights_count):  # 遍历所有灯条
             if i in processed_indices:  # 如果该矩形已处理，跳过
                 continue
+
             light = lights[i]  # 取出当前灯条
+
             for j in range(lights_count) : 
-                if j != i and lights[j].color == light.color :  # 如果找到接近的灯条
+                if j != i and j not in processed_indices and lights[j].color == light.color :  # 如果找到接近的灯条
                     type, height = self.is_close(light, lights[j], self.light_params)
                     if height is not None :
                         armor = Armor(light, lights[j], height, type)  # 创建装甲板对象
@@ -243,7 +241,6 @@ class ArmorDetector:  # 定义检测器类
                         processed_indices.update([i] + [j])  # 将已处理的矩形索引添加到 processed_indices 中
         self.armors = armors
         return self.armors
-
 
     def id_armor(self):  # 为装甲板分配 ID 的函数
         armors_dict = {}
@@ -363,22 +360,21 @@ class ArmorDetector:  # 定义检测器类
 
 if __name__ == "__main__":  # 主程序入口
     # 模式参数字典
-    detect_color =  0  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
+    detect_color =  2  # 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
     display_mode = 2 # 显示模式 0: 不显示, 1: 显示二值化图, 2: 显示二值化图和结果图像
     # 图像参数字典
-    binary_val = 35  
+    binary_val = 225
     light_params = {
         "light_area_min": 5,  # 最小灯条面积
-        "light_angle_min": -45,  # 最小灯条角度
-        "light_angle_max": 45,  # 最大灯条角度
-        "light_red_ratio": 3.0,
-        "light_blue_ratio": 3.0,
-        "light_angle_tol": 20,  # 灯条角度容差
-        "vertical_discretization": 0.3,  # 垂直离散
-        "height_tol": 12,  # 高度容差
+        "light_angle_min": -35,  # 最小灯条角度
+        "light_angle_max": 35,  # 最大灯条角度
+        "light_red_ratio": 1,
+        "light_blue_ratio": 1,
+        "light_angle_tol": 7,  # 灯条角度容差
+        "vertical_discretization": 2.1,  # 垂直离散
+        "height_tol": 18,  # 高度容差
         "cy_tol": 5,  # 中心点的y轴容差
-        "height_multiplier": 3, 
-        "hw" : 7.2
+        "height_multiplier": 2.7, 
     }
     # 颜色参数字典
     color_params = {
@@ -387,9 +383,11 @@ if __name__ == "__main__":  # 主程序入口
         "light_dot": {1: (0, 0, 255), 0: (255, 0, 0)}  # 灯条中心点颜色映射
     }
     detector = ArmorDetector(detect_color, display_mode, binary_val, light_params, color_params)  # 创建检测器对象
-    info = detector.detect_armor(cv2.imread('src/rm_yolo_aim/test/rb.jpeg'))  # 读取图像并进行检测
-    img = detector.display()  # 显示图像
-    cv2.imread('result', img)
+    info = detector.detect_armor(cv2.resize(cv2.imread('src/rm_yolo_aim/test/b.jpg'), (640, 480)))  # 读取图像并进行检测
+    bin, img = detector.display()  # 显示图像
+    cv2.namedWindow('result', cv2.WINDOW_NORMAL)
+    cv2.imshow('bin', bin)
+    cv2.imshow('result', img)
     logger.info(info) # 打印检测结果
     cv2.waitKey(0)  # 等待按键
     cv2.destroyAllWindows()  # 关闭所有窗口
