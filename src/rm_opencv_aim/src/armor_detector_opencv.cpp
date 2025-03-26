@@ -380,16 +380,15 @@ public:
     }
 
     cv::Mat draw_lights(cv::Mat img_draw) { // 绘制灯条的函数
-        img_draw = img_draw.clone();
         for (const auto& light : lights) { // 遍历灯条
             if (light.color == 0) { // 如果颜色为红色
             // 绘制直线
-            cv::line(img_draw, light.up, light.down, cv::Scalar(90, 71, 200), 1); 
+            cv::line(img_draw, light.up, light.down, cv::Scalar(0, 100, 255), 1); 
             // 绘制中心点
             cv::circle(img_draw, cv::Point(static_cast<int>(light.cx), static_cast<int>(light.cy)), 1, cv::Scalar(255, 0, 0), -1); // 1是半径，-1表示填充  
             }
             else if (light.color == 1) { // 如果颜色为蓝色
-                cv::line(img_draw, light.up, light.down, cv::Scalar(255, 0, 0), 1);
+                cv::line(img_draw, light.up, light.down, cv::Scalar(200, 71, 90), 1);
                 cv::circle(img_draw, cv::Point(static_cast<int>(light.cx), static_cast<int>(light.cy)), 1, cv::Scalar(0, 0, 255), -1);
             }
         }      
@@ -398,31 +397,63 @@ public:
 
     cv::Mat draw_armors(cv::Mat img_draw) { // 绘制装甲板的函数
         for (const auto& armor : armors) { // 遍历装甲板
+            int img_height = img_draw.rows; // 图像高度
+            int img_width = img_draw.cols; // 图像宽度
             // 获取中心点坐标
             cv::Point center = armor.center;
+            // 坐标转换
+            int center_x = static_cast<int>(center.x - (img_width / 2));
+            int center_y = static_cast<int>(-(center.y - (img_height / 2))); // y轴反转
+
             if (armor.color == 0) { // 如果颜色为红色
                 // 绘制装甲板的上下光条
-                cv::line(img_draw, armor.light1_up, armor.light1_down, cv::Scalar(128, 0, 128), 1);
-                cv::line(img_draw, armor.light2_up, armor.light2_down, cv::Scalar(128, 0, 128), 1);
+                cv::line(img_draw, armor.light1_up, armor.light2_down, cv::Scalar(128, 0, 128), 1);
+                cv::line(img_draw, armor.light2_up, armor.light1_down, cv::Scalar(128, 0, 128), 1);
                 // 在图像上标记坐标
-                cv::putText(img_draw, "(" + std::to_string(center.x) + ", " + std::to_string(center.y) + ")", 
+                cv::putText(img_draw, "(" + std::to_string(center_x) + ", " + std::to_string(center_y) + ")", 
                         center, cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(120, 255, 255), 2); // 绘制文本
             }
             else if (armor.color == 1){ // 如果颜色为蓝色
                 // 绘制装甲板的上下光条
-                cv::line(img_draw, armor.light1_up, armor.light1_down, cv::Scalar(255, 255, 0), 1);
-                cv::line(img_draw, armor.light2_up, armor.light2_down, cv::Scalar(255, 255, 0), 1);
+                cv::line(img_draw, armor.light1_up, armor.light2_down, cv::Scalar(255, 255, 0), 1);
+                cv::line(img_draw, armor.light2_up, armor.light1_down, cv::Scalar(255, 255, 0), 1);
                 // 在图像上标记坐标
-                cv::putText(img_draw, "(" + std::to_string(center.x) + ", " + std::to_string(center.y) + ")", 
+                cv::putText(img_draw, "(" + std::to_string(center_x) + ", " + std::to_string(center_y) + ")", 
                         center, cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(120, 255, 255), 2); // 绘制文本
             }
         }
         return img_draw; // 返回绘制后的图像
     }
-    // std::map<std::string, std::map<int, std::array<int, 3>>> color_params = {
-    //     {"armor_color", {{1, {255, 255, 0}}, {0, {128, 0, 128}}}},
-    //     {"light_color", {{1, {200, 71, 90}}, {0, {0, 100, 255}}}},
-    //     {"light_dot", {{1, {0, 0, 255}}, {0, {255, 0, 0}}}}
+
+    cv::Mat draw_img() {
+        cv::Mat img_draw = img.clone(); // 复制原始图像
+        img_draw = draw_armors(img_draw); // 绘制装甲板
+        img_drawn = draw_lights(img_draw); // 绘制灯条
+        return img_drawn; // 返回绘制后的图像
+    }
+    // 显示函数
+    std::tuple<cv::Mat, cv::Mat> display() {
+        if (display_mode == 1) {
+            return std::make_tuple(img_binary, cv::Mat()); // 返回二值图像和空图像
+        } else if (display_mode == 2) {
+            img_drawn = draw_img(); // 绘制图像
+            return std::make_tuple(img_binary, img_drawn); // 返回二值图像和绘制后的图像
+        } else if (display_mode == 0) {
+            return std::make_tuple(cv::Mat(), cv::Mat()); // 返回两个空图像
+        } else {
+            std::cerr << "Invalid display mode" << std::endl;
+            return std::make_tuple(cv::Mat(), cv::Mat()); // 返回两个空图像
+        }
+    }
+
+    std::vector<Armor_info> detect_armors(const cv::Mat& img_input){
+        img_binary = process(img_input);
+        lights = find_lights(img_binary);
+        armors = is_armor(lights);
+        armors_info = id_armor();
+        return armors_info;
+    }
+
 };
 
 int main() {
@@ -451,7 +482,7 @@ int main() {
 
     //模式参数字典
     int detect_color =  2;  // 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
-    int display_mode = 1; // 显示模式 0: 不显示, 1: 显示二值化图, 2: 显示二值化图和结果图像
+    int display_mode = 0; // 显示模式 0: 不显示, 1: 显示二值化图, 2: 显示二值化图和结果图像
     // 图像参数字典
     int binary_val = 225;
     ArmorDetector detector(detect_color, display_mode, binary_val, light_params); // 创建 ArmorDetector 对象
@@ -463,20 +494,11 @@ int main() {
         return -1; // 返回错误码
     }
     cv::Mat img_draw;
-    // 处理图像并获取二值化结果
-    cv::Mat binary_image = detector.process(input_image);
-    std::vector<Armor> armors; // 存储装甲板
-    std::vector<Light> lights; // 存储灯条
-    std::vector<Armor_info> info; // 存储灯条
-    cv::Mat contours_img;
-    lights = detector.find_lights(binary_image);
-    armors = detector.is_armor(lights);
-    info = detector.id_armor();
-    img_draw = detector.draw_lights(input_image);
-    img_draw = detector.draw_armors(img_draw);
-    for (const auto& armor : armors) {
+    std::vector<Armor_info> info = detector.detect_armors(input_image);
+    
+    for (const auto& inf : info) {
         // 处理找到的灯条（例如，输出数量）
-        std::cout << "找到的armors: " << armor.color << std::endl;
+        std::cout << "找到的armors: " << inf.cx << "," << inf.cy << std::endl;
     }
     //创建窗口并显示图像
     cv::namedWindow("Input Image", cv::WINDOW_AUTOSIZE); // 创建窗口
