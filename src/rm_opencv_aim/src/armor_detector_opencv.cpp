@@ -147,7 +147,7 @@ public:
     
     // 处理图像的函数
     cv::Mat process(const cv::Mat& img_input) {
-        img = img_input; // 复制输入图像
+        img = img_input.clone(); // 复制输入图像
         cv::Mat gray_img; // 用于存储灰度图像
         // 将图像转换为灰度图并进行二值化处理
         cv::cvtColor(img, gray_img, cv::COLOR_BGR2GRAY); // 转为灰度图
@@ -164,28 +164,31 @@ public:
 
         // 查找轮廓，不使用层级信息
         cv::findContours(img_binary_input, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-        // 遍历轮廓，查找灯条
+        //success!!!
+        //遍历轮廓，查找灯条
         for (const auto& contour : contours) {
             // 计算轮廓面积
             if (cv::contourArea(contour) >= light_params.light_area_min) {
                 // 获取最小外接矩形
                 cv::RotatedRect min_rect = cv::minAreaRect(contour);
+            
                 cv::Size2f w_h = min_rect.size; // 矩形的宽高
                 double angle = min_rect.angle; // 矩形的旋转角度
 
                 // 调整宽高和角度
-                std::make_pair(w_h, angle) = adjust(w_h, angle); // 假设有 adjust 函数
+                std::tie(w_h, angle) = adjust(w_h, angle); // 假设有 adjust 函数
+                //success!
 
                 // 检查角度是否在指定范围内
                 if (angle >= light_params.light_angle_min && angle <= light_params.light_angle_max) {
                         // 添加合适的矩形到is_lights
                         cv::RotatedRect rect(min_rect.center, w_h, static_cast<float>(angle)); // 创建旋转矩形
                         is_lights.push_back(rect); // 存储旋转矩形
-                }
+                        //std::cout << "angle:" << rect.angle << "w_h:" << rect.size << "angle:" << rect.center << std::endl;
+               }
             }
         }
-
+        //success!!
         for (const auto& rect : is_lights) {  // 遍历过滤后的灯条
             cv::Point2f box[4];
             rect.points(box); // 获取旋转矩形的四个点
@@ -219,7 +222,37 @@ public:
                 int current_x = static_cast<int>(up_x + (down_x - up_x) * t);
                 int current_y = static_cast<int>(up_y + (down_y - up_y) * t);
 
-                // 添加边界检查
+            // 添加边界检查
+            if (current_x >= 0 && current_x < img.cols && current_y >= 0 && current_y < img.rows) {
+                roi.at<cv::Vec3b>(0, i) = img.at<cv::Vec3b>(current_y, current_x); // 保存像素值
+            }
+
+            cv::Point2f box[4];
+            rect.points(box); // 获取旋转矩形的四个点
+
+            // 计算上端点
+            int right_up_x = static_cast<int>(box[0].x);
+            int right_up_y = static_cast<int>(box[0].y);
+            int left_up_x = static_cast<int>(box[3].x);
+            int left_up_y = static_cast<int>(box[3].y);
+
+            int up_x = static_cast<int>(std::abs(right_up_x - left_up_x) / 2 + std::min(right_up_x, left_up_x));
+            int up_y = static_cast<int>(std::abs(right_up_y - left_up_y) / 2 + std::min(right_up_y, left_up_y));
+            cv::Point2f up(up_x, up_y);
+
+            // 计算下端点
+            int right_down_x = static_cast<int>(box[1].x);
+            int right_down_y = static_cast<int>(box[1].y);
+            int left_down_x = static_cast<int>(box[2].x);
+            int left_down_y = static_cast<int>(box[2].y);
+
+            int down_x = static_cast<int>(std::abs(right_down_x - left_down_x) / 2 + std::min(right_down_x, left_down_x));
+            int down_y = static_cast<int>(std::abs(right_down_y - left_down_y) / 2 + std::min(right_down_y, left_down_y));
+            cv::Point2f down(down_x, down_y);
+
+            int length = static_cast<int>(std::sqrt(std::pow(down_x - up_x, 2) + std::pow(down_y - up_y, 2))); // 计算线段的长度
+            cv::Mat roi(1, length, CV_8UC3, cv::Scalar(0, 0, 0)); // 创建新图像以存储裁剪的线段像素
+
                 if (0 <= current_x && current_x < img.cols && 0 <= current_y && current_y < img.rows) {
                     roi.at<cv::Vec3b>(0, i) = img.at<cv::Vec3b>(current_y, current_x); // 保存像素值
                 }
@@ -238,59 +271,54 @@ public:
                 lights_found.push_back(light_red); // 添加红色灯条
             }
         }
-
         lights = lights_found;
         return lights;
     }
 
     std::pair<int, float> is_close(const Light& light1, const Light& light2) {
-    // 检查 y 坐标的距离
-    if (std::abs(light1.cy - light2.cy) < light_params.cy_tol) {
-        float height = std::max(light1.height, light2.height);
-        float distance = calculate_distance({light1.cx, light1.cy}, {light2.cx, light2.cy});
+        // 检查 y 坐标的距离
+        if (std::abs(light1.cy - light2.cy) < light_params.cy_tol) {
+            float height = std::max(light1.height, light2.height);
+            float distance = calculate_distance({light1.cx, light1.cy}, {light2.cx, light2.cy});
 
-        if (distance > height) {
-            if (distance < height * light_params.height_multiplier) {
-                return std::make_pair(0, height); // first small armor
-            } else if (distance < height * 1.86f * light_params.height_multiplier) {
-                return std::make_pair(1, height); // last large armor
+            if (distance > height) {
+                if (distance < height * light_params.height_multiplier) {
+                    return std::make_pair(0, height); // first small armor
+                } else if (distance < height * 1.86f * light_params.height_multiplier) {
+                    return std::make_pair(1, height); // last large armor
+                }
             }
         }
-    }
 
-    // 检查高度差
-    else if (std::abs(light1.height - light2.height) <= light_params.height_tol) {
-        float angle_diff = std::abs(light1.angle - light2.angle); // 计算角度差
-        if (angle_diff <= light_params.light_angle_tol) { // 判断角度差是否在容忍范围内
-            float light1_angle = std::atan2(light1.up.y - light1.down.y, light1.up.x - light1.down.x) * 180.0 / M_PI; // 计算连线角度
-            float light2_angle = std::atan2(light2.up.y - light2.down.y, light2.up.x - light2.down.x) * 180.0 / M_PI; // 计算连线角度
-            float line_angle = std::atan2(light1.cy - light2.cy, light1.cx - light2.cx) * 180.0 / M_PI; // 计算连线角度
+        // 检查高度差
+        else if (std::abs(light1.height - light2.height) <= light_params.height_tol) {
+            float angle_diff = std::abs(light1.angle - light2.angle); // 计算角度差
+            if (angle_diff <= light_params.light_angle_tol) { // 判断角度差是否在容忍范围内
+                float light1_angle = std::atan2(light1.up.y - light1.down.y, light1.up.x - light1.down.x) * 180.0 / M_PI; // 计算连线角度
+                float light2_angle = std::atan2(light2.up.y - light2.down.y, light2.up.x - light2.down.x) * 180.0 / M_PI; // 计算连线角度
+                float line_angle = std::atan2(light1.cy - light2.cy, light1.cx - light2.cx) * 180.0 / M_PI; // 计算连线角度
 
-            float slope1 = angle_to_slope(light1_angle); // 计算斜率
-            float slope2 = angle_to_slope(light2_angle);
-            float slope_line = angle_to_slope(line_angle);
+                float slope1 = angle_to_slope(light1_angle); // 计算斜率
+                float slope2 = angle_to_slope(light2_angle);
+                float slope_line = angle_to_slope(line_angle);
 
-            // 检查斜率接近
-            if (std::abs(slope1 * slope_line + 1) < light_params.vertical_discretization || 
-                std::abs(slope2 * slope_line + 1) < light_params.vertical_discretization) {
-                float height = std::max(light1.height, light2.height);
-                float distance = calculate_distance({light1.cx, light1.cy}, {light2.cx, light2.cy});
-                
-                if (distance > height) {
-                    if (distance < height * light_params.height_multiplier) {
-                        return std::make_pair(0, height); // first small armor
-                    } else if (distance < height * 1.86f * light_params.height_multiplier) {
-                        return std::make_pair(1, height); // last large armor
+                // 检查斜率接近
+                if (std::abs(slope1 * slope_line + 1) < light_params.vertical_discretization || 
+                    std::abs(slope2 * slope_line + 1) < light_params.vertical_discretization) {
+                    float height = std::max(light1.height, light2.height);
+                    float distance = calculate_distance({light1.cx, light1.cy}, {light2.cx, light2.cy});
+                    
+                    if (distance > height) {
+                        if (distance < height * light_params.height_multiplier) {
+                            return std::make_pair(0, height); // first small armor
+                        } else if (distance < height * 1.86f * light_params.height_multiplier) {
+                            return std::make_pair(1, height); // last large armor
+                        }
                     }
                 }
             }
         }
-    }
-
-    else {
-    return std::make_pair(-1, -1); // 不满足条件则返回 nullptr
-    }
-
+        return std::make_pair(-1, -1.0f); // 不满足条件则返回 -1
     }
 
     std::vector<Armor> is_armor(const std::vector<Light>& lights) {
@@ -309,10 +337,9 @@ public:
                 if (j != i && !processed_indices.count(j) && lights[j].color == light.color) { // 如果找到接近的灯条
                     int type;
                     float height;
-                    auto result = is_close(light, lights[j]); // 调用 is_close 函数
-                    type = result.first; // 获取类型
-                    height = result.second; // 获取高度
-
+                    std::tie(type, height) = is_close(light, lights[j]); // 调用 is_close 函数
+                    // 获取类型 // 获取高度
+                    std::cout << "type: " << type << ", height: " << height << std::endl;
                     if (type >= 0) { // 判断高度是否有效
                         Armor armor(light, lights[j], height, type); // 创建装甲板对象
                         armors_found.push_back(armor); // 添加装甲板到列表
@@ -357,13 +384,13 @@ public:
         for (const auto& light : lights) { // 遍历灯条
             if (light.color == 0) { // 如果颜色为红色
             // 绘制直线
-            cv::line(img_draw, light.up, light.down, (200, 71, 90), 1); 
+            cv::line(img_draw, light.up, light.down, cv::Scalar(90, 71, 200), 1); 
             // 绘制中心点
-            cv::circle(img_draw, cv::Point(static_cast<int>(light.cx), static_cast<int>(light.cy)), 1, (255, 0, 0), -1); // 1是半径，-1表示填充  
+            cv::circle(img_draw, cv::Point(static_cast<int>(light.cx), static_cast<int>(light.cy)), 1, cv::Scalar(255, 0, 0), -1); // 1是半径，-1表示填充  
             }
             else if (light.color == 1) { // 如果颜色为蓝色
-                cv::line(img_draw, light.up, light.down, (0, 255, 0), 1);
-                cv::circle(img_draw, cv::Point(static_cast<int>(light.cx), static_cast<int>(light.cy)), 1, (0, 0, 255), -1);
+                cv::line(img_draw, light.up, light.down, cv::Scalar(255, 0, 0), 1);
+                cv::circle(img_draw, cv::Point(static_cast<int>(light.cx), static_cast<int>(light.cy)), 1, cv::Scalar(0, 0, 255), -1);
             }
         }      
         return img_draw; // 返回绘制后的图像
@@ -375,17 +402,20 @@ public:
             cv::Point center = armor.center;
             if (armor.color == 0) { // 如果颜色为红色
                 // 绘制装甲板的上下光条
-                cv::line(img_draw, armor.light1_up, armor.light1_down, (128, 0, 128), 1);
-                cv::line(img_draw, armor.light2_up, armor.light2_down, (128, 0, 128), 1);
+                cv::line(img_draw, armor.light1_up, armor.light1_down, cv::Scalar(128, 0, 128), 1);
+                cv::line(img_draw, armor.light2_up, armor.light2_down, cv::Scalar(128, 0, 128), 1);
+                // 在图像上标记坐标
+                cv::putText(img_draw, "(" + std::to_string(center.x) + ", " + std::to_string(center.y) + ")", 
+                        center, cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(120, 255, 255), 2); // 绘制文本
             }
             else if (armor.color == 1){ // 如果颜色为蓝色
                 // 绘制装甲板的上下光条
-                cv::line(img_draw, armor.light1_up, armor.light1_down, (255, 255, 0), 1);
-                cv::line(img_draw, armor.light2_up, armor.light2_down, (255, 255, 0), 1);
-            }
-            // 在图像上标记坐标
+                cv::line(img_draw, armor.light1_up, armor.light1_down, cv::Scalar(255, 255, 0), 1);
+                cv::line(img_draw, armor.light2_up, armor.light2_down, cv::Scalar(255, 255, 0), 1);
+                // 在图像上标记坐标
                 cv::putText(img_draw, "(" + std::to_string(center.x) + ", " + std::to_string(center.y) + ")", 
-                            center, cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(120, 255, 255), 2); // 绘制文本
+                        center, cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(120, 255, 255), 2); // 绘制文本
+            }
         }
         return img_draw; // 返回绘制后的图像
     }
@@ -403,9 +433,9 @@ int main() {
     float light_red_ratio = 1.0;
     float light_blue_ratio = 1.0;
     int cy_tol = 5;
-    int height_tol = 18; 
+    int height_tol = 20; 
     int light_angle_tol = 7;
-    float vertical_discretization = 2.1;
+    float vertical_discretization = 10;
     float height_multiplier = 2.7;
     Light_params light_params = {
         light_area_min, 
@@ -438,14 +468,15 @@ int main() {
     std::vector<Armor> armors; // 存储装甲板
     std::vector<Light> lights; // 存储灯条
     std::vector<Armor_info> info; // 存储灯条
+    cv::Mat contours_img;
     lights = detector.find_lights(binary_image);
     armors = detector.is_armor(lights);
     info = detector.id_armor();
     img_draw = detector.draw_lights(input_image);
     img_draw = detector.draw_armors(img_draw);
-    for (const auto& light : lights) {
+    for (const auto& armor : armors) {
         // 处理找到的灯条（例如，输出数量）
-        std::cout << "找到的灯条: " << light.cx << std::endl;
+        std::cout << "找到的armors: " << armor.color << std::endl;
     }
     //创建窗口并显示图像
     cv::namedWindow("Input Image", cv::WINDOW_AUTOSIZE); // 创建窗口
