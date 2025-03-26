@@ -6,13 +6,10 @@
 #include <map>
 #include <thread>
 #include <chrono>
-#include <jsoncpp/json/json.h> // 需要引入 JSON 库
 #include <utility> // 包含 std::pair
-#include <vector>
 #include <limits> // 用于 std::numeric_limits
 #include <algorithm> // 用于 std::min_element 和 std::max_element
 #include <set>
-#include <algorithm> // 用于 std::min_element 和 std::max_element
 
 // 计算两个点之间的距离
 double calculate_distance(const cv::Point2f& p1, const cv::Point2f& p2) {
@@ -46,49 +43,6 @@ double angle_to_slope(double angle_degrees) {
     return slope; // 返回斜率
 }
 
-// 投影计算函数
-std::pair<float, float> project(const std::vector<cv::Point2f>& polygon, const cv::Point2f& axis) {
-    float min = std::numeric_limits<float>::max(); // 初始化最小值
-    float max = std::numeric_limits<float>::lowest(); // 初始化最大值
-
-    for (const auto& point : polygon) {
-        // 计算点在法向量上的投影
-        float projection = (point.x * axis.x + point.y * axis.y); // 点在法向量上的投影
-        min = std::min(min, projection); // 更新最小值
-        max = std::max(max, projection); // 更新最大值
-    }
-    return {min, max}; // 返回最小值和最大值
-}
-
-//检查两个多边形是否重叠
-bool is_coincide(const std::vector<cv::Point2f>& a, const std::vector<cv::Point2f>& b) {
-    // 检查多边形 a 和 b 是否有效
-    if (a.size() < 3 || b.size() < 3) {
-        return false; // 如果其中一个多边形无效，直接返回 false
-    }
-
-    // 遍历多边形 a 和 b
-    for (const auto& polygon : {a, b}) {
-        for (size_t i = 0; i < polygon.size(); ++i) {
-            auto p1 = polygon[i]; // 当前点
-            auto p2 = polygon[(i + 1) % polygon.size()]; // 下一个点
-
-            // 计算法向量
-            cv::Point2f normal = {p2.y - p1.y, p1.x - p2.x}; // 计算法向量
-
-            // 计算投影的最小值和最大值
-            auto [min_a, max_a] = project(a, normal);
-            auto [min_b, max_b] = project(b, normal);
-
-            // 检查是否相交
-            if (max_a < min_b || max_b < min_a) {
-                return false; // 不相交
-            }
-        }
-    }
-    return true; // 如果没有早期返回，说明两个多边形相交
-}
-
 class Light {
 public:
     int cx;          // 中心 x 坐标
@@ -102,8 +56,8 @@ public:
     // 构造函数
     Light(const cv::Point2f& up, const cv::Point2f& down, double angle, int color)
         : up(up), down(down), angle(angle), color(color) {
-        cx = static_cast<int>((up.x + down.x) / 2); // 计算中心 x 坐标
-        cy = static_cast<int>((up.y + down.y) / 2); // 计算中心 y 坐标
+        cx = static_cast<int>(std::abs(up.x - down.x) / 2 + std::min(up.x, down.x)); // 计算中心 x 坐标
+        cy = static_cast<int>(std::abs(up.y - down.y) / 2 + std::min(up.y, down.y)); // 计算中心 y 坐标
         height = calculate_distance(up, down); // 计算高度
     }
 };
@@ -124,10 +78,9 @@ public:
         : light1_up(light1.up), light1_down(light1.down),
           light2_up(light2.up), light2_down(light2.down),
           height(height), type(type) {
-        
-        // 计算中心坐标
-        int armor_cx = static_cast<int>((light1.cx + light2.cx) / 2);
-        int armor_cy = static_cast<int>((light1.cy + light2.cy) / 2);
+        //计算中心坐标
+        int armor_cx = static_cast<int>(std::abs(light1.cx - light2.cx) / 2 + std::min(light1.cx, light2.cx));
+        int armor_cy = static_cast<int>(std::abs(light1.cy - light2.cy) / 2 + std::min(light1.cy, light2.cy));
         center = cv::Point(armor_cx, armor_cy); // 设置中心坐标
         color = light1.color; // 装甲板颜色初始化为 light1 的颜色
     }
@@ -151,42 +104,50 @@ public:
     }
 };
 
+// 定义 Armor_info 结构体
+typedef struct {
+    float height; // 装甲板高度
+    int class_id; // 装甲板类别 ID
+    float cx; // 中心 x 坐标
+    float cy; // 中心 y 坐标
+} Armor_info;
+
+// 定义 Light_params 结构体
+typedef struct {
+    int light_area_min;
+    int light_angle_min;
+    int light_angle_max;
+    float light_red_ratio;
+    float light_blue_ratio;
+    int cy_tol;
+    int height_tol; 
+    int light_angle_tol;
+    float vertical_discretization;
+    float height_multiplier;
+} Light_params;
+
 class ArmorDetector {
 public:
     cv::Mat img; // 原始图像
     cv::Mat img_binary; // 二值化图像
-    cv::Mat img_draw; // 绘制图像
+    cv::Mat img_drawn; // 绘制图像
     std::vector<Light> lights; // 存储灯条列表
     std::vector<Armor> armors; // 存储装甲板列表
-    std::map<int, std::map<std::string, int>> armors_dict; // 装甲板信息字典
+    std::vector<Armor_info> armors_info; // 装甲板信息字典
 
     int binary_val; // 二值化阈值
     int color; // 颜色模式
     int display_mode; // 显示模式
-    std::map<std::string, int> light_params; // 灯条参数
-
-    // 颜色映射类型定义
-    using ColorMap = std::map<int, std::array<int, 3>>; // 使用 std::array 表示 RGB 颜色
-    using ColorParams = std::map<std::string, ColorMap>; // 使用嵌套的 map 类型
-
-    // 成员变量
-    ColorMap armor_color; // 装甲板颜色映射
-    ColorMap light_color; // 灯条颜色映射
-    ColorMap light_dot;   // 灯条中心点颜色映射
+    Light_params light_params; // 灯条参数
     
     // 构造函数
     ArmorDetector(int detect_color, int display_mode, int binary_val, 
-                  const std::map<std::string, int>& light_params, 
-                  const ColorParams& color_params) 
-        : binary_val(binary_val), color(detect_color), display_mode(display_mode), 
-          light_params(light_params),
-          armor_color(color_params.at("armor_color")), // 获取装甲板颜色映射
-          light_color(color_params.at("light_color")), // 获取灯条颜色映射
-          light_dot(color_params.at("light_dot")) {}   // 获取灯条中心点颜色映射
+                const Light_params light_params) 
+                : color(detect_color), binary_val(binary_val), display_mode(display_mode), light_params(light_params){}
     
     // 处理图像的函数
     cv::Mat process(const cv::Mat& img_input) {
-        img = img_input.clone(); // 复制输入图像
+        img = img_input; // 复制输入图像
         cv::Mat gray_img; // 用于存储灰度图像
         // 将图像转换为灰度图并进行二值化处理
         cv::cvtColor(img, gray_img, cv::COLOR_BGR2GRAY); // 转为灰度图
@@ -207,7 +168,7 @@ public:
         // 遍历轮廓，查找灯条
         for (const auto& contour : contours) {
             // 计算轮廓面积
-            if (cv::contourArea(contour) >= light_params["light_area_min"]) {
+            if (cv::contourArea(contour) >= light_params.light_area_min) {
                 // 获取最小外接矩形
                 cv::RotatedRect min_rect = cv::minAreaRect(contour);
                 cv::Size2f w_h = min_rect.size; // 矩形的宽高
@@ -217,55 +178,13 @@ public:
                 std::make_pair(w_h, angle) = adjust(w_h, angle); // 假设有 adjust 函数
 
                 // 检查角度是否在指定范围内
-                if (angle >= light_params["light_angle_min"] && angle <= light_params["light_angle_max"]) {
+                if (angle >= light_params.light_angle_min && angle <= light_params.light_angle_max) {
                         // 添加合适的矩形到is_lights
                         cv::RotatedRect rect(min_rect.center, w_h, static_cast<float>(angle)); // 创建旋转矩形
                         is_lights.push_back(rect); // 存储旋转矩形
                 }
             }
         }
-
-        // // 过滤不重叠的光源
-        // for (const auto& is_light : is_lights) { // 遍历所有光源
-        //     bool is_overlapping = false; // 标记当前光源是否与其他光源重叠
-
-        //     // 获取当前光源的边界框点
-        //     std::vector<cv::Point2f> current_box(4); 
-        //     cv::boxPoints(is_light, current_box); 
-
-        //     // 遍历所有其他光源
-        //     for (const auto& other_is_light : is_lights) { 
-        //         // 确保不是同一个光源
-        //         if (is_light.center != other_is_light.center) {
-        //             // 获取其他光源的边界框点
-        //             std::vector<cv::Point2f> other_box(4); 
-        //             cv::boxPoints(other_is_light, other_box); 
-
-        //             // 检查边界框是否有效
-        //             if (current_box.size() == 4 && other_box.size() == 4) {
-        //                 // 检查是否重叠
-        //                 if (is_coincide(current_box, other_box)) {
-        //                     is_overlapping = true; // 设置为重叠标记
-        //                     break; // 找到重叠后跳出内层循环
-        //                 }
-        //             } else {
-        //                 std::cerr << "Warning: Invalid box size detected!" << std::endl; // 调试信息
-        //             }
-        //         }
-        //     }
-
-        //     // 如果没有重叠，添加到不重叠的灯条列表中
-        //     if (!is_overlapping) { 
-        //         is_lights_filtered.push_back(is_light); 
-        //     }
-        // }
-        // return lights;
-        // std::cout << "Detected lights (is_lights):" << std::endl;
-        // for (const auto& light : is_lights) {
-        //     std::cout << "Center: (" << light.center.x << ", " << light.center.y << "), "
-        //     << "Size: (" << light.size.width << ", " << light.size.height << "), "
-        //     << "Angle: " << light.angle << std::endl;
-        // }
 
         for (const auto& rect : is_lights) {  // 遍历过滤后的灯条
             cv::Point2f box[4];
@@ -311,51 +230,201 @@ public:
             int sum_r = cv::sum(roi)[2]; // 红色通道总和
 
             // 根据模式识别颜色
-            if ((color == 1 || color == 2) && sum_b > sum_r * light_params["light_blue_ratio"]) {
+            if ((color == 1 || color == 2) && sum_b > sum_r * light_params.light_blue_ratio) {
                 Light light_blue(up, down, rect.angle, 1); // 创建蓝色灯条对象
                 lights_found.push_back(light_blue); // 添加蓝色灯条
-            } else if ((color == 0 || color == 2) && sum_r > sum_b * light_params["light_red_ratio"]) {
+            } else if ((color == 0 || color == 2) && sum_r > sum_b * light_params.light_red_ratio) {
                 Light light_red(up, down, rect.angle, 0); // 创建红色灯条对象
                 lights_found.push_back(light_red); // 添加红色灯条
             }
         }
+
         lights = lights_found;
         return lights;
     }
 
+    std::pair<int, float> is_close(const Light& light1, const Light& light2) {
+    // 检查 y 坐标的距离
+    if (std::abs(light1.cy - light2.cy) < light_params.cy_tol) {
+        float height = std::max(light1.height, light2.height);
+        float distance = calculate_distance({light1.cx, light1.cy}, {light2.cx, light2.cy});
 
-    
+        if (distance > height) {
+            if (distance < height * light_params.height_multiplier) {
+                return std::make_pair(0, height); // first small armor
+            } else if (distance < height * 1.86f * light_params.height_multiplier) {
+                return std::make_pair(1, height); // last large armor
+            }
+        }
+    }
+
+    // 检查高度差
+    else if (std::abs(light1.height - light2.height) <= light_params.height_tol) {
+        float angle_diff = std::abs(light1.angle - light2.angle); // 计算角度差
+        if (angle_diff <= light_params.light_angle_tol) { // 判断角度差是否在容忍范围内
+            float light1_angle = std::atan2(light1.up.y - light1.down.y, light1.up.x - light1.down.x) * 180.0 / M_PI; // 计算连线角度
+            float light2_angle = std::atan2(light2.up.y - light2.down.y, light2.up.x - light2.down.x) * 180.0 / M_PI; // 计算连线角度
+            float line_angle = std::atan2(light1.cy - light2.cy, light1.cx - light2.cx) * 180.0 / M_PI; // 计算连线角度
+
+            float slope1 = angle_to_slope(light1_angle); // 计算斜率
+            float slope2 = angle_to_slope(light2_angle);
+            float slope_line = angle_to_slope(line_angle);
+
+            // 检查斜率接近
+            if (std::abs(slope1 * slope_line + 1) < light_params.vertical_discretization || 
+                std::abs(slope2 * slope_line + 1) < light_params.vertical_discretization) {
+                float height = std::max(light1.height, light2.height);
+                float distance = calculate_distance({light1.cx, light1.cy}, {light2.cx, light2.cy});
+                
+                if (distance > height) {
+                    if (distance < height * light_params.height_multiplier) {
+                        return std::make_pair(0, height); // first small armor
+                    } else if (distance < height * 1.86f * light_params.height_multiplier) {
+                        return std::make_pair(1, height); // last large armor
+                    }
+                }
+            }
+        }
+    }
+
+    else {
+    return std::make_pair(-1, -1); // 不满足条件则返回 nullptr
+    }
+
+    }
+
+    std::vector<Armor> is_armor(const std::vector<Light>& lights) {
+        std::vector<Armor> armors_found;
+        std::set<int> processed_indices; // 用于存储已处理的矩形索引
+        size_t lights_count = lights.size(); // 存储列表长度，避免重复计算
+
+        for (size_t i = 0; i < lights_count; ++i) { // 遍历所有灯条
+            if (processed_indices.count(i)) { // 如果该矩形已处理，跳过
+                continue;
+            }
+
+            const Light& light = lights[i]; // 取出当前灯条
+
+            for (size_t j = 0; j < lights_count; ++j) {
+                if (j != i && !processed_indices.count(j) && lights[j].color == light.color) { // 如果找到接近的灯条
+                    int type;
+                    float height;
+                    auto result = is_close(light, lights[j]); // 调用 is_close 函数
+                    type = result.first; // 获取类型
+                    height = result.second; // 获取高度
+
+                    if (type >= 0) { // 判断高度是否有效
+                        Armor armor(light, lights[j], height, type); // 创建装甲板对象
+                        armors_found.push_back(armor); // 添加装甲板到列表
+                        processed_indices.insert(i); // 将已处理的矩形索引添加到 processed_indices 中
+                        processed_indices.insert(j);
+                    }
+                }
+            }
+        }
+
+        armors = armors_found; // 更新类成员
+        return armors; // 返回装甲板列表
+    }
+
+    std::vector<Armor_info> id_armor() {
+        std::vector<Armor_info> info_found; // 创建装甲板信息列表
+        int img_height = img.rows; // 获取图像高度
+        int img_width = img.cols; // 获取图像宽度
+
+        for (const auto& armor : armors) { // 遍历所有装甲板
+            cv::Point2f center = armor.center; // 获取装甲板中心
+
+            // 计算中心坐标并进行反转
+            float center_x = center.x - (img_width / 2);
+            float center_y = -center.y + (img_height / 2); // 反转 y 坐标
+
+            // 创建 Armor_info 实例并填充数据
+            Armor_info info;
+            info.class_id = armor.type_class(); // 获取装甲板类别 ID
+            info.height = armor.height; // 获取装甲板高度
+            info.cx = center_x; // 设置中心 x 坐标
+            info.cy = center_y; // 设置中心 y 坐标
+            info_found.push_back(info); // 将 Armor_info 实例添加到列表
+        }
+
+        armors_info = info_found; // 更新类成员
+        return armors_info; // 返回装甲板信息列表
+    }
+
+    cv::Mat draw_lights(cv::Mat img_draw) { // 绘制灯条的函数
+        img_draw = img_draw.clone();
+        for (const auto& light : lights) { // 遍历灯条
+            if (light.color == 0) { // 如果颜色为红色
+            // 绘制直线
+            cv::line(img_draw, light.up, light.down, (200, 71, 90), 1); 
+            // 绘制中心点
+            cv::circle(img_draw, cv::Point(static_cast<int>(light.cx), static_cast<int>(light.cy)), 1, (255, 0, 0), -1); // 1是半径，-1表示填充  
+            }
+            else if (light.color == 1) { // 如果颜色为蓝色
+                cv::line(img_draw, light.up, light.down, (0, 255, 0), 1);
+                cv::circle(img_draw, cv::Point(static_cast<int>(light.cx), static_cast<int>(light.cy)), 1, (0, 0, 255), -1);
+            }
+        }      
+        return img_draw; // 返回绘制后的图像
+    }
+
+    cv::Mat draw_armors(cv::Mat img_draw) { // 绘制装甲板的函数
+        for (const auto& armor : armors) { // 遍历装甲板
+            // 获取中心点坐标
+            cv::Point center = armor.center;
+            if (armor.color == 0) { // 如果颜色为红色
+                // 绘制装甲板的上下光条
+                cv::line(img_draw, armor.light1_up, armor.light1_down, (128, 0, 128), 1);
+                cv::line(img_draw, armor.light2_up, armor.light2_down, (128, 0, 128), 1);
+            }
+            else if (armor.color == 1){ // 如果颜色为蓝色
+                // 绘制装甲板的上下光条
+                cv::line(img_draw, armor.light1_up, armor.light1_down, (255, 255, 0), 1);
+                cv::line(img_draw, armor.light2_up, armor.light2_down, (255, 255, 0), 1);
+            }
+            // 在图像上标记坐标
+                cv::putText(img_draw, "(" + std::to_string(center.x) + ", " + std::to_string(center.y) + ")", 
+                            center, cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(120, 255, 255), 2); // 绘制文本
+        }
+        return img_draw; // 返回绘制后的图像
+    }
+    // std::map<std::string, std::map<int, std::array<int, 3>>> color_params = {
+    //     {"armor_color", {{1, {255, 255, 0}}, {0, {128, 0, 128}}}},
+    //     {"light_color", {{1, {200, 71, 90}}, {0, {0, 100, 255}}}},
+    //     {"light_dot", {{1, {0, 0, 255}}, {0, {255, 0, 0}}}}
 };
 
 int main() {
-    // // 前向声明 project 函数
-    // std::pair<double, double> project(const std::vector<std::pair<double, double>>& polygon, const std::pair<double, double>& axis);
+    // 创建 light_params 对象并初始化
+    int light_area_min = 5;
+    int light_angle_min = -35;
+    int light_angle_max = 35;
+    float light_red_ratio = 1.0;
+    float light_blue_ratio = 1.0;
+    int cy_tol = 5;
+    int height_tol = 18; 
+    int light_angle_tol = 7;
+    float vertical_discretization = 2.1;
+    float height_multiplier = 2.7;
+    Light_params light_params = {
+        light_area_min, 
+        light_angle_min, 
+        light_angle_max, 
+        light_red_ratio, 
+        light_blue_ratio, 
+        cy_tol,
+        height_tol, 
+        light_angle_tol, 
+        vertical_discretization, 
+        height_multiplier};
 
-// 创建 ArmorDetector 对象
-    std::map<std::string, int> light_params = {
-        {"light_area_min", 5},
-        {"light_angle_min", -35},
-        {"light_angle_max", 35},
-        {"light_red_ratio", 1},
-        {"light_blue_ratio", 1},
-        {"cy_tol", 5},
-        {"height_tol", 18}, 
-        {"light_angle_tol", 7},
-        {"vertical_discretization", 2.1},
-        {"height_multiplier", 2.7},
-    };
-
-    std::map<std::string, std::map<int, std::array<int, 3>>> color_params = {
-        {"armor_color", {{1, {255, 255, 0}}, {0, {128, 0, 128}}}},
-        {"light_color", {{1, {200, 71, 90}}, {0, {0, 100, 255}}}},
-        {"light_dot", {{1, {0, 0, 255}}, {0, {255, 0, 0}}}}
-    };
     //模式参数字典
-    int detect_color =  1;  // 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
+    int detect_color =  2;  // 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
     int display_mode = 1; // 显示模式 0: 不显示, 1: 显示二值化图, 2: 显示二值化图和结果图像
     // 图像参数字典
     int binary_val = 225;
-    ArmorDetector detector(detect_color, display_mode, binary_val, light_params, color_params); // 创建 ArmorDetector 对象
+    ArmorDetector detector(detect_color, display_mode, binary_val, light_params); // 创建 ArmorDetector 对象
 
     // 读取输入图像
     cv::Mat input_image = cv::imread("./src/rm_opencv_aim/test/b.jpg");
@@ -363,19 +432,27 @@ int main() {
         std::cerr << "Error: Could not load image." << std::endl;
         return -1; // 返回错误码
     }
-
+    cv::Mat img_draw;
     // 处理图像并获取二值化结果
     cv::Mat binary_image = detector.process(input_image);
-    std::vector<Light> lights; // 存储轮廓
+    std::vector<Armor> armors; // 存储装甲板
+    std::vector<Light> lights; // 存储灯条
+    std::vector<Armor_info> info; // 存储灯条
     lights = detector.find_lights(binary_image);
-    // 处理找到的灯条（例如，输出数量）
-    std::cout << "找到的灯条数量: " << lights.size() << std::endl;
+    armors = detector.is_armor(lights);
+    info = detector.id_armor();
+    img_draw = detector.draw_lights(input_image);
+    img_draw = detector.draw_armors(img_draw);
+    for (const auto& light : lights) {
+        // 处理找到的灯条（例如，输出数量）
+        std::cout << "找到的灯条: " << light.cx << std::endl;
+    }
     //创建窗口并显示图像
     cv::namedWindow("Input Image", cv::WINDOW_AUTOSIZE); // 创建窗口
     cv::imshow("Input Image", input_image); // 显示输入图像
 
     cv::namedWindow("Binary Image", cv::WINDOW_AUTOSIZE); // 创建窗口
-    cv::imshow("Binary Image", binary_image); // 显示二值化图像
+    cv::imshow("Binary Image", img_draw); // 显示二值化图像
 
     // 等待用户按键
     cv::waitKey(0); // 等待任意按键

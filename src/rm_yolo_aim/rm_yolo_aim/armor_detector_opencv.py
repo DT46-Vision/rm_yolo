@@ -189,7 +189,7 @@ class ArmorDetector:  # 定义检测器类
 
     def is_close(self, light1, light2, light_params):  # 检查两个矩形是否接近则返回一个高度
         if abs(light1.cy - light2.cy) < light_params["cy_tol"]: 
-            height = min(light1.height, light2.height)
+            height = max(light1.height, light2.height)
             distance = calculate_distance((light1.cx, light1.cy), (light2.cx, light2.cy))                    
             if distance > height :
                 if distance < height * self.light_params["height_multiplier"]:
@@ -251,7 +251,7 @@ class ArmorDetector:  # 定义检测器类
             center_x = int(center[0] - (img_width / 2))
             center_y = -int(center[1] - (img_height / 2)) # 图片的y轴和准星的y轴是反的
 
-            armors_dict[int(center[0])] = {  # 添加装甲板信息到字典
+            armors_dict[center_x] = {  # 添加装甲板信息到字典
                 "class_id": armor.type_class(),  # 添加 armor_id
                 "height": armor.height,  # 添加高度
                 "center": [center_x, center_y]  # 添加中心点
@@ -267,12 +267,12 @@ class ArmorDetector:  # 定义检测器类
 
 
     def draw_lights(self, img):  # 绘制灯条的函数
-            for light in self.lights:  # 遍历灯条
-                # 绘制直线
-                cv2.line(img, light.up, light.down, self.light_color[light.color], 1) 
-                # 绘制中心点
-                cv2.circle(img, (light.cx, light.cy), 1, self.light_dot[light.color], -1)  # 5是半径，-1表示填充
-            return img
+        for light in self.lights:  # 遍历灯条
+            # 绘制直线
+            cv2.line(img, light.up, light.down, self.light_color[light.color], 1) 
+            # 绘制中心点
+            cv2.circle(img, (light.cx, light.cy), 1, self.light_dot[light.color], -1)  # 5是半径，-1表示填充
+        return img
     
 
     def draw_armors(self, img):  # 绘制装甲板的函数
