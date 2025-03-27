@@ -3,12 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include <map>
-#include <thread>
-#include <chrono>
 #include <utility> // 包含 std::pair
-#include <limits> // 用于 std::numeric_limits
-#include <algorithm> // 用于 std::min_element 和 std::max_element
 #include <set>
 
 // 计算两个点之间的距离
@@ -131,6 +126,7 @@ public:
     cv::Mat img; // 原始图像
     cv::Mat img_binary; // 二值化图像
     cv::Mat img_drawn; // 绘制图像
+
     std::vector<Light> lights; // 存储灯条列表
     std::vector<Armor> armors; // 存储装甲板列表
     std::vector<Armor_info> armors_info; // 装甲板信息字典
@@ -138,6 +134,7 @@ public:
     int binary_val; // 二值化阈值
     int color; // 颜色模式
     int display_mode; // 显示模式
+
     Light_params light_params; // 灯条参数
     
     // 构造函数
@@ -145,6 +142,63 @@ public:
                 const Light_params light_params) 
                 : color(detect_color), binary_val(binary_val), display_mode(display_mode), light_params(light_params){}
     
+
+    // 更新灯条参数的函数
+    void update_light_area_min(int new_light_area_min) {
+        light_params.light_area_min = new_light_area_min;
+    }
+
+    void update_light_angle_min(int new_light_angle_min) {
+        light_params.light_angle_min = new_light_angle_min;
+    }
+
+    void update_light_angle_max(int new_light_angle_max) {
+        light_params.light_angle_max = new_light_angle_max;
+    }
+
+    void update_light_red_ratio(float new_light_red_ratio) {
+        light_params.light_red_ratio = new_light_red_ratio;
+    }
+
+    void update_light_blue_ratio(float new_light_blue_ratio) {
+        light_params.light_blue_ratio = new_light_blue_ratio;
+    }
+
+    void update_cy_tol(int new_cy_tol) {
+        light_params.cy_tol = new_cy_tol;
+    }
+
+    void update_height_tol(int new_height_tol) {
+        light_params.height_tol = new_height_tol;
+    }
+
+    void update_light_angle_tol(int new_light_angle_tol) {
+        light_params.light_angle_tol = new_light_angle_tol;
+    }
+
+    void update_vertical_discretization(float new_vertical_discretization) {
+        light_params.vertical_discretization = new_vertical_discretization;
+    }
+
+    void update_height_multiplier(float new_height_multiplier) {
+        light_params.height_multiplier = new_height_multiplier;
+    }
+
+    // 更新二值化阈值
+    void update_binary_val(int new_binary_val) {
+        binary_val = new_binary_val; // 更新二值化阈值
+    }
+
+    // 更新颜色模式
+    void update_detect_color(int new_color) {
+        color = new_color; // 更新颜色模式
+    }
+
+    // 更新显示模式
+    void update_display_mode(int new_display_mode) {
+        display_mode = new_display_mode; // 更新显示模式
+    }
+
     // 处理图像的函数
     cv::Mat process(const cv::Mat& img_input) {
         img = img_input.clone(); // 复制输入图像
@@ -164,7 +218,7 @@ public:
 
         // 查找轮廓，不使用层级信息
         cv::findContours(img_binary_input, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-        //success!!!
+
         //遍历轮廓，查找灯条
         for (const auto& contour : contours) {
             // 计算轮廓面积
@@ -177,18 +231,16 @@ public:
 
                 // 调整宽高和角度
                 std::tie(w_h, angle) = adjust(w_h, angle); // 假设有 adjust 函数
-                //success!
 
                 // 检查角度是否在指定范围内
                 if (angle >= light_params.light_angle_min && angle <= light_params.light_angle_max) {
                         // 添加合适的矩形到is_lights
                         cv::RotatedRect rect(min_rect.center, w_h, static_cast<float>(angle)); // 创建旋转矩形
                         is_lights.push_back(rect); // 存储旋转矩形
-                        //std::cout << "angle:" << rect.angle << "w_h:" << rect.size << "angle:" << rect.center << std::endl;
                }
             }
         }
-        //success!!
+
         for (const auto& rect : is_lights) {  // 遍历过滤后的灯条
             cv::Point2f box[4];
             rect.points(box); // 获取旋转矩形的四个点
@@ -337,9 +389,9 @@ public:
                 if (j != i && !processed_indices.count(j) && lights[j].color == light.color) { // 如果找到接近的灯条
                     int type;
                     float height;
-                    std::tie(type, height) = is_close(light, lights[j]); // 调用 is_close 函数
                     // 获取类型 // 获取高度
-                    std::cout << "type: " << type << ", height: " << height << std::endl;
+                    std::tie(type, height) = is_close(light, lights[j]); // 调用 is_close 函数
+
                     if (type >= 0) { // 判断高度是否有效
                         Armor armor(light, lights[j], height, type); // 创建装甲板对象
                         armors_found.push_back(armor); // 添加装甲板到列表
@@ -456,61 +508,63 @@ public:
 
 };
 
-int main() {
-    // 创建 light_params 对象并初始化
-    int light_area_min = 5;
-    int light_angle_min = -35;
-    int light_angle_max = 35;
-    float light_red_ratio = 1.0;
-    float light_blue_ratio = 1.0;
-    int cy_tol = 5;
-    int height_tol = 20; 
-    int light_angle_tol = 7;
-    float vertical_discretization = 10;
-    float height_multiplier = 2.7;
-    Light_params light_params = {
-        light_area_min, 
-        light_angle_min, 
-        light_angle_max, 
-        light_red_ratio, 
-        light_blue_ratio, 
-        cy_tol,
-        height_tol, 
-        light_angle_tol, 
-        vertical_discretization, 
-        height_multiplier};
+// int main() {
+//     // 创建 light_params 对象并初始化
+//     int light_area_min = 5;
+//     int light_angle_min = -35;
+//     int light_angle_max = 35;
+//     float light_red_ratio = 1.0;
+//     float light_blue_ratio = 1.0;
+//     int cy_tol = 5;
+//     int height_tol = 10; 
+//     int light_angle_tol = 7;
+//     float vertical_discretization = 2.1;
+//     float height_multiplier = 2.7;
 
-    //模式参数字典
-    int detect_color =  2;  // 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
-    int display_mode = 0; // 显示模式 0: 不显示, 1: 显示二值化图, 2: 显示二值化图和结果图像
-    // 图像参数字典
-    int binary_val = 225;
-    ArmorDetector detector(detect_color, display_mode, binary_val, light_params); // 创建 ArmorDetector 对象
+//     Light_params light_params = {
+//         light_area_min, 
+//         light_angle_min, 
+//         light_angle_max, 
+//         light_red_ratio, 
+//         light_blue_ratio, 
+//         cy_tol,
+//         height_tol, 
+//         light_angle_tol, 
+//         vertical_discretization, 
+//         height_multiplier};
 
-    // 读取输入图像
-    cv::Mat input_image = cv::imread("./src/rm_opencv_aim/test/b.jpg");
-    if (input_image.empty()) {
-        std::cerr << "Error: Could not load image." << std::endl;
-        return -1; // 返回错误码
-    }
-    cv::Mat img_draw;
-    std::vector<Armor_info> info = detector.detect_armors(input_image);
+//     //模式参数字典
+//     int detect_color =  0;  // 颜色参数 0: 识别红色装甲板, 1: 识别蓝色装甲板, 2: 识别全部装甲板
+//     int display_mode = 2; // 显示模式 0: 不显示, 1: 显示二值化图, 2: 显示二值化图和结果图像
+//     // 图像参数字典
+//     int binary_val = 225;
+//     ArmorDetector detector(detect_color, display_mode, binary_val, light_params); // 创建 ArmorDetector 对象
+//     detector.update_detect_color(1);
+//     // 读取输入图像
+//     cv::Mat input_image = cv::imread("./src/rm_opencv_aim/test/b.jpg");
+//     if (input_image.empty()) {
+//         std::cerr << "Error: Could not load image." << std::endl;
+//         return -1; // 返回错误码
+//     }
+//     cv::Mat bin;
+//     cv::Mat drawn;
+//     std::vector<Armor_info> info = detector.detect_armors(input_image);
+//     std::tie(bin, drawn) = detector.display();
     
-    for (const auto& inf : info) {
-        // 处理找到的灯条（例如，输出数量）
-        std::cout << "找到的armors: " << inf.cx << "," << inf.cy << std::endl;
-    }
-    //创建窗口并显示图像
-    cv::namedWindow("Input Image", cv::WINDOW_AUTOSIZE); // 创建窗口
-    cv::imshow("Input Image", input_image); // 显示输入图像
+//     //创建窗口并显示图像
+//     cv::namedWindow("Input Image", cv::WINDOW_AUTOSIZE); // 创建窗口
+//     cv::imshow("Input Image", input_image); // 显示输入图像
 
-    cv::namedWindow("Binary Image", cv::WINDOW_AUTOSIZE); // 创建窗口
-    cv::imshow("Binary Image", img_draw); // 显示二值化图像
+//     cv::namedWindow("Binary Image", cv::WINDOW_AUTOSIZE); // 创建窗口
+//     cv::imshow("Binary Image", bin); // 显示二值化图像
 
-    // 等待用户按键
-    cv::waitKey(0); // 等待任意按键
+//     cv::namedWindow("armors", cv::WINDOW_AUTOSIZE); // 创建窗口
+//     cv::imshow("armors", drawn); // 显示二值化图像
 
-    // 关闭所有窗口
-    cv::destroyAllWindows();
-    return 0;
-}
+//     // 等待用户按键
+//     cv::waitKey(0); // 等待任意按键
+
+//     // 关闭所有窗口
+//     cv::destroyAllWindows();
+//     return 0;
+// }
