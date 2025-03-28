@@ -5,34 +5,43 @@ from loguru import logger
 RAD2DEG = 180 / math.pi
 DEG2RAD = math.pi / 180
 
-def select_tracking_armor(armors_dict, color, track_hight_tol, cx_tol):
+class Armor:
+    def __init__(self, class_id, center, height):
+        self.class_id = class_id
+        self.center = center
+        self.height = height
 
-    # 筛选垂直方向的长度大于1像素的装甲板
-    filtered_height_data = {k: v for k, v in armors_dict.items() if v["height"] > 1}
+def select_tracking_armor(msg, color, track_hight_tol, cx_tol):
+    
+    armor_info = []
+    
+    for info in msg.armors:
+        armor = Armor(info.class_id, (info.cx, info.cy), info.height)
+        armor_info.append(armor)
     
     # 没有直接退出
-    if not filtered_height_data:
-        tracking_armor = {}
+    if not armor_info:
+        tracking_armor = []
         return tracking_armor
     
     # 根据颜色筛选 1: 蓝色, 0: 红色
     if color == 1:
-        filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] < 6}
+        filtered_color_data = [armor for armor in armor_info if armor.class_id() < 6]
     
     elif color == 0:
-        filtered_color_data = {k: v for k, v in filtered_height_data.items() if v["class_id"] > 5}
+        filtered_color_data = [armor for armor in armor_info if armor.class_id() > 5]
     
     else:
-        return {}  # 颜色输入不合法就返回空
+        return []  # 颜色输入不合法就返回空
     
     # 没有直接退出
     if not filtered_color_data:
-        tracking_armor = {}
+        tracking_armor = []
         return tracking_armor
     
     # 检查 filtered_color_data 的数量
     if len(filtered_color_data) == 1:
-        tracking_armor = next(iter(filtered_color_data.values()))
+        tracking_armor = filtered_color_data
         return tracking_armor
 
     # 按高度排序并取前两个条目

@@ -30,7 +30,8 @@ class ArmorTrackerNode(Node):
         super().__init__(name)  # ROS2节点父类初始化
 
         self.sub_armors = self.create_subscription(
-            ArmorsMsg, '/detector/armors_info', self.listener_callback_armors, 10)  # 订阅装甲板信息
+            ArmorsCppMsg, '/detector/armors_info', self.listener_callback_armors, 10)  # 订阅装甲板信息
+
         self.sub_cam    = self.create_subscription(
             Image, 'image_raw', self.listener_callback_cam, 10)
 
@@ -38,6 +39,7 @@ class ArmorTrackerNode(Node):
             Decision, '/nav/decision', self.listener_callback_serial, 10)  # 订阅串口数据
 
         self.pic_width = 1024       # 随便初始化一个图像宽度
+        self.fov = 72
         self.center_last = (0, 0)   # 默认初始化中心点坐标为(0, 0)
         self.height_last = 0             # 初始化armmor高度为0
 
@@ -109,8 +111,11 @@ class ArmorTrackerNode(Node):
             self.kf_cx.dt = dt
             self.kf_cy.dt = dt
             self.kf_h.dt = dt
-            # 将JSON格式的数据转换回Python字典
-            armors_dict = json.loads(msg.data)
+
+            armors_dict = msg
+            
+            # 选择要跟踪的装甲板
+            self.tracking_armor = select_tracking_armor(armors_dict, self.tracking_color, self.reflection_hight_tol, self.reflection_cx_tol)  
 
             if self.tracking_color == 0: 
                 color_str = '红色'
@@ -124,9 +129,6 @@ class ArmorTrackerNode(Node):
             else :
                 color_str = "未知"
                 self.get_logger().info(f"颜色格式错误")
-
-            # 选择要跟踪的装甲板
-            self.tracking_armor = select_tracking_armor(armors_dict, self.tracking_color, self.reflection_hight_tol, self.reflection_cx_tol)  # 0表示红色
             
             if not self.tracking_armor:  # 检查 tracking_armor 是否为空
                 logger.info("tracking_armor is empty, returning default values.")
@@ -161,7 +163,7 @@ class ArmorTrackerNode(Node):
 
                     print(f"预测的 cx: {self.center_last[0]}, cy: {self.center_last[1]}, h: {self.height_last}")
 
-            yaw, pitch, deep = pixel_to_angle_and_deep(self.height_last, self.center_last, 72, self.pic_width) 
+            yaw, pitch, deep = pixel_to_angle_and_deep(self.height_last, self.center_last, self.fov, self.pic_width) 
             buff = deep * self.deep_buff
             # 将装甲板信息字典转换为msg消息定义的格式
             tracking_armor_json = json.dumps(self.tracking_armor)
