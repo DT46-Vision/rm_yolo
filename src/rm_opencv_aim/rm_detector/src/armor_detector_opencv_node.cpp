@@ -16,7 +16,7 @@ public:
             5,    // light_area_min
             -35,  // light_angle_min
             35,   // light_angle_max
-            1.0,  // light_red_ratio
+            2.0,  // light_red_ratio
             2.0,  // light_blue_ratio
             5,    // cy_tol
             10,   // height_tol
@@ -27,8 +27,8 @@ public:
 
         // 模式参数字典
         int detect_color = 2;  // 颜色参数
-        int display_mode = 2;  // 显示模式
-        int binary_val = 225;
+        int display_mode = 0;  // 显示模式
+        int binary_val = 20;
 
         // 创建 ArmorDetector 对象并初始化
         detector_ = std::make_shared<ArmorDetector>(detect_color, display_mode, binary_val, light_params);
@@ -37,16 +37,16 @@ public:
         this->declare_parameter<int>("light_area_min", 5);
         this->declare_parameter<int>("light_angle_min", -35);
         this->declare_parameter<int>("light_angle_max", 35);
-        this->declare_parameter<float>("light_red_ratio", 1.0);
-        this->declare_parameter<float>("light_blue_ratio", 1.0);
+        this->declare_parameter<float>("light_red_ratio", 2.0);
+        this->declare_parameter<float>("light_blue_ratio", 2.0);
         this->declare_parameter<int>("cy_tol", 5);
         this->declare_parameter<int>("height_tol", 10);
         this->declare_parameter<int>("light_angle_tol", 7);
         this->declare_parameter<float>("vertical_discretization", 2.1);
         this->declare_parameter<float>("height_multiplier", 2.7);
-        this->declare_parameter<int>("binary_val", 225);
+        this->declare_parameter<int>("binary_val", 20);
         this->declare_parameter<int>("detect_color", 2);
-        this->declare_parameter<int>("display_mode", 2);
+        this->declare_parameter<int>("display_mode", 0);
 
         // 注册参数回调并保存句柄
         callback_handle_ = this->add_on_set_parameters_callback(

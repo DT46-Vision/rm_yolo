@@ -13,14 +13,14 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='rihoko',
-    maintainer_email='a1219814581@163.com',
+    maintainer='kielas',
+    maintainer_email='c1470759@outlook.com',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'armor_tracker = rm_yolo_aim.armor_tracker_node:main',
+            'rm_tracker_node = rm_tracker.armor_tracker_node:main',
         ],
     },
 )

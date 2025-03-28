@@ -16,19 +16,19 @@ find_package(cv_bridge REQUIRED)
 find_package(rm_interfaces REQUIRED)
 
 # 添加可执行文件
-add_executable(rm_opencv_detector 
+add_executable(rm_detector_node 
   src/armor_detector_opencv_node.cpp
   src/armor_detector_opencv.cpp
 )
 
 # 指定头文件路径（推荐使用 target_include_directories）
-target_include_directories(rm_opencv_detector PUBLIC
+target_include_directories(rm_detector_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
 
 # 链接依赖项（使用 ament_target_dependencies 自动处理）
-ament_target_dependencies(rm_opencv_detector
+ament_target_dependencies(rm_detector_node
   rclcpp
   sensor_msgs
   OpenCV
@@ -37,7 +37,7 @@ ament_target_dependencies(rm_opencv_detector
 )
 
 # 安装目标
-install(TARGETS rm_opencv_detector
+install(TARGETS rm_detector_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

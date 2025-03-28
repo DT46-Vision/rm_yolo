@@ -11,61 +11,58 @@ class Armor:
         self.center = center
         self.height = height
 
-def select_tracking_armor(msg, color, track_hight_tol, cx_tol):
+def select_tracking_armor(msg, color, track_height_tol, cx_tol):
+    """
+    从 ArmorsCppMsg 中选择目标装甲板。
     
-    armor_info = []
+    Args:
+        msg: ArmorsCppMsg 类型的消息
+        color: 目标颜色 (1: 蓝色, 0: 红色)
+        track_height_tol: 高度差阈值
+        cx_tol: 中心 x 坐标差阈值
     
-    for info in msg.armors:
-        armor = Armor(info.class_id, (info.cx, info.cy), info.height)
-        armor_info.append(armor)
+    Returns:
+        list: 包含单个目标 Armor 对象的列表，若无目标则为空列表
+    """
+    # 解包装甲板信息
+    armor_info = [Armor(info.class_id, (info.cx, info.cy), info.height) for info in msg.armors]
     
-    # 没有直接退出
+    # 如果没有装甲板，直接返回空列表
     if not armor_info:
-        tracking_armor = []
-        return tracking_armor
-    
-    # 根据颜色筛选 1: 蓝色, 0: 红色
-    if color == 1:
-        filtered_color_data = [armor for armor in armor_info if armor.class_id() < 6]
-    
-    elif color == 0:
-        filtered_color_data = [armor for armor in armor_info if armor.class_id() > 5]
-    
-    else:
-        return []  # 颜色输入不合法就返回空
-    
-    # 没有直接退出
-    if not filtered_color_data:
-        tracking_armor = []
-        return tracking_armor
-    
-    # 检查 filtered_color_data 的数量
-    if len(filtered_color_data) == 1:
-        tracking_armor = filtered_color_data
-        return tracking_armor
+        return []
 
-    # 按高度排序并取前两个条目
-    top_two_highest_armor = sorted(filtered_color_data.items(), key=lambda item: item[1]["height"], reverse=True)[:2]
-    # 检查高度差
-    height_diff = top_two_highest_armor[0][1]["height"] - top_two_highest_armor[1][1]["height"]
-    if height_diff > track_hight_tol:
-        # 如果高度差超过阈值，则直接返回最高的装甲板
-        return top_two_highest_armor[0][1]
+    # 根据颜色筛选：1 表示蓝色 (class_id < 6)，0 表示红色 (class_id > 5)
+    if color == 1:
+        filtered_color_data = [armor for armor in armor_info if armor.class_id < 6]
+    elif color == 0:
+        filtered_color_data = [armor for armor in armor_info if armor.class_id > 5]
     else:
-        # 检查 X 坐标差
-        cx_diff = abs(top_two_highest_armor[0][1]['center'][0] - top_two_highest_armor[1][1]['center'][0])
-        if cx_diff > cx_tol:
-            # 如果 X 坐标差超过阈值，则返回 X 坐标最小的装甲板
-            if abs(top_two_highest_armor[0][1]['center'][0]) < abs(top_two_highest_armor[1][1]['center'][0]):
-                return top_two_highest_armor[0][1]
-            else:
-                return top_two_highest_armor[1][1]
-        else:
-            # 否则，选择 Y 坐标最高的中心点对应的装甲板
-            if top_two_highest_armor[0][1]['center'][1] > top_two_highest_armor[1][1]['center'][1]:
-                return top_two_highest_armor[0][1]
-            else:
-                return top_two_highest_armor[1][1]
+        return []  # 非法颜色值
+
+    # 如果筛选后没有装甲板，返回空列表
+    if not filtered_color_data:
+        return []
+
+    # 如果只有一个装甲板，直接返回
+    if len(filtered_color_data) == 1:
+        return filtered_color_data
+
+    # 按高度排序，取前两个
+    top_two = sorted(filtered_color_data, key=lambda armor: armor.height, reverse=True)[:2]
+    height_diff = top_two[0].height - top_two[1].height
+
+    # 高度差超过阈值，返回最高的装甲板
+    if height_diff > track_height_tol:
+        return [top_two[0]]
+
+    # 检查 x 坐标差
+    cx_diff = abs(top_two[0].center[0] - top_two[1].center[0])
+    if cx_diff > cx_tol:
+        # 返回 x 坐标绝对值最小的装甲板
+        return [top_two[0]] if abs(top_two[0].center[0]) < abs(top_two[1].center[0]) else [top_two[1]]
+
+    # 否则，返回 y 坐标最高的装甲板
+    return [top_two[0]] if top_two[0].center[1] > top_two[1].center[1] else [top_two[1]]
 
 def deep_cal(x):
     if x <= 0:

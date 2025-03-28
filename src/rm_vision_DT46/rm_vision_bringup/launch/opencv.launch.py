@@ -8,11 +8,11 @@ from launch_ros.actions import Node
 def generate_launch_description():
     # 获取参数文件路径
     params_file = os.path.join(
-        get_package_share_directory("mindvision_camera"), "config", "camera_params.yaml"
+        get_package_share_directory("hik_camera"), "config", "camera_params.yaml"
     )
     
     # 相机信息URL
-    camera_info_url = "package://mindvision_camera/config/camera_info.yaml"
+    camera_info_url = "package://hik_camera/config/camera_info.yaml"
 
     # 创建launch描述
     return LaunchDescription([
@@ -29,26 +29,26 @@ def generate_launch_description():
             emulate_tty=True,
         ),        
 
-        # 启动 armor_detector_cv_node
+        # 启动 armor_detector
         Node(
-            package="rm_yolo_aim",
-            executable="armor_detector_opencv_node",
+            package="rm_detector",
+            executable="rm_detector_node",
             output="screen",
             emulate_tty=True,
         ),
         
-        # 启动 armor_tracker_node
+        # 启动 rm_tracker_node
         Node(
-            package="rm_yolo_aim",
-            executable="armor_tracker_node",
+            package="rm_tracker",
+            executable="rm_tracker_node",
             output="screen",
             emulate_tty=True,
         ),
         
-        # 启动 mindvision_camera_node
+        # 启动 hik_camera_node
         Node(
-            package="mindvision_camera",
-            executable="mindvision_camera_node",
+            package="hik_camera",
+            executable="hik_camera_node",
             output="screen",
             emulate_tty=True,
             parameters=[
